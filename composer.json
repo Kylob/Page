@@ -1,0 +1,28 @@
+{
+    "name": "bootpress/page",
+    "description": "Manipulate every part of an HTML page at any time.",
+    "keywords": ["bootpress", "page", "url", "uri", "html", "framework"],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kyle Gadd",
+            "email": "kyle.gadd@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.4",
+        "symfony/http-foundation": "^2.3||^3.0",
+        "spartz/text-formatter": "^1.0",
+        "league/commonmark": "~0.7",
+        "jbroadway/urlify": "^1.0",
+        "altorouter/altorouter": "^1.0"
+    },
+    "require-dev": {
+        "bootpress/htmlunit": "^1.0",
+        "friendsofphp/php-cs-fixer": "^1.0",
+        "squizlabs/php_codesniffer": "^2.5"
+    },
+    "autoload": {
+        "psr-4": { "BootPress\\Page\\": "src" }
+    }
+}
