@@ -197,7 +197,7 @@ Enjoy!
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
 
-[badge-version]: https://img.shields.io/packagist/v/bootpress/page.svg?style=flat-square
+[badge-version]: https://img.shields.io/packagist/v/bootpress/page.svg?style=flat-square&label=Packagist
 [badge-license]: https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square
 [badge-hhvm]: https://img.shields.io/badge/HHVM-Tested-8892bf.svg?style=flat-square
 [badge-php]: https://img.shields.io/badge/PHP%207-Supported-8892bf.svg?style=flat-square
