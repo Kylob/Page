@@ -1,6 +1,6 @@
 {
     "name": "bootpress/page",
-    "description": "Manipulate every part of an HTML page at any time.",
+    "description": "Manipulate every part of an HTML Page at any time.",
     "keywords": ["bootpress", "page", "url", "uri", "html", "framework"],
     "license": "MIT",
     "authors": [
