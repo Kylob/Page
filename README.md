@@ -6,7 +6,7 @@
 [![Code Climate](https://img.shields.io/codeclimate/github/Kylob/Page.svg?style=flat-square)](https://codeclimate.com/github/Kylob/Page)
 [![Test Coverage](https://img.shields.io/codeclimate/coverage/github/Kylob/Page.svg?style=flat-square)](https://codeclimate.com/github/Kylob/Page/coverage)
 
-A framework agnostic HTML framework that allows you to manipulate every part of an HTML page at any time.
+A framework agnostic HTML framework that allows you to manipulate every part of an HTML Page at any time.
 
 ## Installation
 
@@ -75,7 +75,7 @@ $page->link('<style>body { background-color:red; color:black; }</style>');
 $page->script('alert("Hello World");'); // or
 $page->link('<script>alert("Hello World");</script>');
 
-// All of these will go into one $(document).ready(function(){...}) at the bottom of your page
+// All of these will go into one $(document).ready(function(){...}); at the bottom of your page
 $page->jquery('$("button.continue").html("Next Step...");');
 ```
 
@@ -105,7 +105,7 @@ That will return you a nice:
     <script>alert("Hello World");</script>
     $(document).ready(function(){
         $("button.continue").html("Next Step...");
-    })
+    });
 </body>
 </html>
 ```
@@ -162,7 +162,7 @@ That will give you:
     <script>alert("Hello World");</script>
     $(document).ready(function(){
         $("button.continue").html("Next Step...");
-    })
+    });
 </body>
 </html>
 ```
@@ -177,9 +177,9 @@ echo $page->url['path']; // seo-path
 if ($page->get('form') == 'submitted') { // https://example.com/seo-path.html?form=submitted
     $eject = $page->url('delete', '', 'form'); // https://example.com/seo-path.html
     $page->eject($page->url('add', $eject, 'payment', 'received')); // go now to https://example.com/seo-path.html?payment=received
+} elseif ($page->get('payment') == 'received') {
+    mail($address, 'Thanks for your money!');
 }
-
-mail($address, 'Thanks for your money!');
 ```
 
 That should be a good enough sampling for a README file.  We didn't even get to directories, filters, and responses, but it's all there in the source code, fully documented.
