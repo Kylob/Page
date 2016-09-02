@@ -7,7 +7,6 @@
 [![Build Status](https://img.shields.io/travis/Kylob/Page/master.svg?style=flat-square)](https://travis-ci.org/Kylob/Page)
 [![Code Climate](https://img.shields.io/codeclimate/github/Kylob/Page.svg?style=flat-square)](https://codeclimate.com/github/Kylob/Page)
 [![Test Coverage](https://img.shields.io/codeclimate/coverage/github/Kylob/Page.svg?style=flat-square)](https://codeclimate.com/github/Kylob/Page/coverage)
-[![Downloads](https://img.shields.io/packagist/dt/bootpress/page.svg?style=flat-square&maxAge=3600)](https://packagist.org/packages/bootpress/page)
 
 A framework agnostic HTML framework that allows you to manipulate every part of an HTML Page at any time.
 
