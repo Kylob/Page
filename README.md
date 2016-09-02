@@ -1,10 +1,13 @@
 # use BootPress\Page\Component;
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/bootpress/page.svg?style=flat-square)](https://packagist.org/packages/bootpress/page)
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
+[![Packagist](https://img.shields.io/packagist/v/bootpress/page.svg?style=flat-square&label=Packagist)](https://packagist.org/packages/bootpress/page)
+[![License MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE.md)
+[![HHVM Tested](https://img.shields.io/badge/HHVM-Tested-8892bf.svg?style=flat-square)](https://travis-ci.org/Kylob/Page)
+[![PHP 7 Supported](https://img.shields.io/badge/PHP%207-Supported-8892bf.svg?style=flat-square)](https://travis-ci.org/Kylob/Page)
 [![Build Status](https://img.shields.io/travis/Kylob/Page/master.svg?style=flat-square)](https://travis-ci.org/Kylob/Page)
 [![Code Climate](https://img.shields.io/codeclimate/github/Kylob/Page.svg?style=flat-square)](https://codeclimate.com/github/Kylob/Page)
 [![Test Coverage](https://img.shields.io/codeclimate/coverage/github/Kylob/Page.svg?style=flat-square)](https://codeclimate.com/github/Kylob/Page/coverage)
+[![Downloads](https://img.shields.io/packagist/dt/bootpress/page.svg?style=flat-square&maxAge=3600)](https://packagist.org/packages/bootpress/page)
 
 A framework agnostic HTML framework that allows you to manipulate every part of an HTML Page at any time.
 
@@ -23,6 +26,10 @@ Add the following to your ``composer.json`` file.
 ## Example Usage
 
 ``` php
+<?php
+
+use BootPress\Page\Component as Page;
+
 $page = Page::html();
 ```
 
