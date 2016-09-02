@@ -1,4 +1,4 @@
-# use BootPress\Page\Component;
+# use BootPress\Page\Component as Page;
 
 [![Packagist](https://img.shields.io/packagist/v/bootpress/page.svg?style=flat-square&label=Packagist)](https://packagist.org/packages/bootpress/page)
 [![License MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE.md)
