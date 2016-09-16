@@ -7,9 +7,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\Session;
-use League\CommonMark\CommonMarkConverter;
-use Spartz\TextFormatter\TextFormatter;
-use URLify; // jbroadway/urlify
 use AltoRouter;
 
 class Component
@@ -662,43 +659,6 @@ class Component
         }
 
         return $html;
-    }
-
-    /**
-     * Some handy formatters that always come in handy.
-     * 
-     * @param string      $type    The type of string you are formatting:  Either '**url**', '**markdown**', or '**title**'.
-     * @param string      $string  What you would like to format
-     * @param false|mixed $slashes If anything but false, it will allow your url to have slashes.
-     * 
-     * @return string Depending on $type
-     */
-    public function format($type, $string, $slashes = false)
-    {
-        switch ($type) {
-            case 'url':
-                $url = ($slashes !== false) ? explode('/', $string) : array($string);
-                foreach ($url as $key => $value) {
-                    $url[$key] = URLify::filter($value);
-                }
-                $string = implode('/', $url);
-                break;
-            case 'markdown':
-                $converter = new CommonMarkConverter();
-                $string = $converter->convertToHtml($string);
-                break;
-            case 'title':
-                $string = explode(' ', $string);
-                foreach ($string as $key => $value) {
-                    if (!empty($value) && mb_strtoupper($value) == $value) {
-                        $string[$key] = mb_strtolower($value);
-                    }
-                }
-                $string = TextFormatter::titleCase(implode(' ', $string));
-                break;
-        }
-
-        return $string;
     }
 
     /**
