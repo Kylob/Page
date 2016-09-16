@@ -152,7 +152,7 @@ That will give you:
 <html   >
 <HEad>
     <meta charset="UTF-8">
-    <meta name="description" content="Page description">
+    <meta name="description" content="Page description.">
 < title>Broken</tit
 <META content=" name " name="author">
     <link rel="shortcut icon" href="https://example.com/images/favicon.ico">
