@@ -39,7 +39,11 @@ class Component
     public static function html(array $url = array(), Request $request = null, $overthrow = false)
     {
         if ($overthrow || null === static::$instance) {
-            static::$instance = static::isolated($url, $request);
+            $page = static::isolated($url, $request);
+            if (isset($url['base']) && is_string($url['base']) && strcmp($page->url['full'], $page->request->getUri()) !== 0) {
+                $page->eject($page->url['full'], 301);
+            }
+            static::$instance = $page;
         }
 
         return static::$instance;
@@ -61,7 +65,6 @@ class Component
             'suffix' => null,
             'chars' => 'a-z0-9~%.:_-',
         ), $url), EXTR_SKIP);
-        $enforce = (is_string($base)) ? true : false;
         $page = new static();
         if (isset($testing)) {
             $page->testing = $testing;
@@ -112,9 +115,6 @@ class Component
         $page->url['path'] = preg_replace('/[^'.$page->url['chars'].'.\/]/i', '', $page->url['path']);
         $page->url['suffix'] = (!empty($suffix) && in_array($suffix, $page->url['html'])) ? $suffix : '';
         $page->url['full'] = $page->formatLocalPath($page->url['base'].$page->url['path'].$page->url['query']);
-        if ($enforce && strcmp($page->url['full'], $page->request->getUri()) !== 0) {
-            $page->eject($page->url['full'], 301);
-        }
         $page->set(array(), 'reset');
 
         return $page;
