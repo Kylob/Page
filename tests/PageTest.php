@@ -15,24 +15,28 @@ class PageTest extends \BootPress\HTMLUnit\Component
         }
         ini_set('session.gc_probability', 0);
         $request = Request::create('http://website.com/path/to/folder.html', 'GET', array('foo' => 'bar'));
-        $page = Page::html(array('testing' => true, 'dir' => __DIR__.'/page', 'suffix' => '.html'), $request);
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'base' => 'https://www.website.com',
+            'suffix' => '.html',
+            'testing' => true,
+        ), $request);
         $this->assertEquals(str_replace('\\', '/', __DIR__.'/page').'/', $page->dir['page']);
-        $this->assertEquals('http://website.com/', $page->url['base']);
+        $this->assertEquals('https://www.website.com/', $page->url['base']);
         $this->assertEquals('path/to/folder', $page->url['path']);
         $this->assertEquals('.html', $page->url['suffix']);
         $this->assertEquals('?foo=bar', $page->url['query']);
         $this->assertEquals('html', $page->url['format']);
         $this->assertEquals('GET', $page->url['method']);
         $this->assertEquals('/path/to/folder', $page->url['route']);
-        $this->assertEquals('http://website.com/path/to/folder.html?foo=bar', $page->url['full']);
+        $this->assertEquals('https://www.website.com/path/to/folder.html?foo=bar', $page->url['full']);
     }
 
     public function testIsolatedStaticMethod()
     {
         $request = Request::create('http://website.com/file.css', 'GET');
-        $page = Page::isolated(array('testing'=>true, 'base'=>'https://www.website.com'), $request);
-        $page = Page::isolated(array('base'=>'website.com'), $request);
-        $this->assertEquals('http://website.com/', $page->url['base']);
+        $page = Page::isolated(array('base'=>'another.com'), $request);
+        $this->assertEquals('http://another.com/', $page->url['base']);
         $this->assertEquals('css', $page->url['format']);
         $this->assertEquals('file.css', $page->url['path']);
         $page = Page::isolated(array('dir'=>'page/../page/test'));
