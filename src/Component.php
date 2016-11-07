@@ -1127,7 +1127,7 @@ class Component
      * 
      * @param array $files An array of files that share a common directory somewhere.
      * 
-     * @return The common directory (with trailing slash) shared amongst your $files.
+     * @return string The common directory (with trailing slash) shared amongst your $files.
      */
     public function commonDir(array $files)
     {
