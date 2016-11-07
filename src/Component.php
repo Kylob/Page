@@ -158,7 +158,7 @@ class Component
     }
 
     /**
-     * This is so that we can use multi-dimensional arrays with HTML Page properties.
+     * Enables us to use multi-dimensional arrays with HTML Page properties.
      * 
      * @param string $name
      * 
@@ -170,10 +170,10 @@ class Component
     }
 
     /**
-     * Enables you to set HTML Page properties directly.
+     * Enables us to set HTML Page properties directly.
      * 
-     * @param string $name  The ``$page->$name`` you would like to set.
-     * @param mixed  $value Of the ``$page->$name``.
+     * @param string $name
+     * @param mixed  $value
      */
     public function __set($name, $value)
     {
@@ -190,7 +190,6 @@ class Component
      *
      * - '**session**' - The Symfony Session object.
      * - '**request**' - The Symfony Request object.
-     * - '**plugin**' - A PHP callable that you have set up.
      * - '**dir**' - An array of dirs with the following keys:
      *   - '**base**' - The common dir among all that follow - don't ever rely on this to be anything in particular.
      *   - '**page**' - The submitted ``$url['dir']`` when this class was instantiated.
@@ -242,7 +241,6 @@ class Component
 
                 return static::$session;
                 break;
-            case 'plugin':
             case 'request':
             case 'dir':
             case 'url':
