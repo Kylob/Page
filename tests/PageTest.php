@@ -30,6 +30,11 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertEquals('GET', $page->url['method']);
         $this->assertEquals('/path/to/folder', $page->url['route']);
         $this->assertEquals('https://www.website.com/path/to/folder.html?foo=bar', $page->url['full']);
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'suffix' => '.html',
+            'testing' => true,
+        ), $request, 'override'); // Url is no longer secured with a www subdomain
     }
 
     public function testIsolatedStaticMethod()
