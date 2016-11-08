@@ -1227,7 +1227,7 @@ EOT;
             $metadata[] = ($this->html['robots']) ? '<meta name="robots" content="'.$this->html['robots'].'">' : '<meta name="robots" content="noindex, nofollow">'; // ie. false or null
         }
         if (isset($this->data['meta'])) {
-            $metadata[] = array_merge($metadata, $this->data['meta']);
+            $metadata = array_merge($metadata, $this->data['meta']);
         }
 
         return $metadata;
