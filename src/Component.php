@@ -675,9 +675,6 @@ class Component
         if (is_string($args)) {
             $this->data('meta', "<meta {$args}>", false);
         } else {
-            foreach ($args as $key => $value) {
-                $args[$key] = $key.'="'.$value.'"';
-            }
             $this->data('meta', $this->tag('meta', $args), false);
         }
     }
