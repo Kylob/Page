@@ -304,7 +304,6 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertAttributeContains(array('script.js#fancy', 'custom.js'), 'data', $page);
         $this->assertAttributeContains(array('styles.css'), 'data', $page);
         $this->assertAttributeContains('favicon.ico', 'data', $page);
-        $this->assertAttributeContains('icon.png', 'data', $page);
         $page->link('jquery.js', 'prepend');
         $this->assertAttributeContains(array('jquery.js', 'script.js#fancy', 'custom.js'), 'data', $page);
         $page->link('<style>body{background-color:#999;}</style>');
