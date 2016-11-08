@@ -15,7 +15,7 @@ class Component
     private $dir = array();
     private $url = array();
     private $html = array();
-    private $data = array(); // meta, ico, apple, css, style, other, js, jquery, script
+    private $data = array(); // meta, ico, css, style, other, js, jquery, script
     private $filters = array(); // managed in $this->filter() (public), and retrieved in $this->process() (private)
     private $testing = false; // $this->send() exit's a Symfony Response if this is false
     private static $instance;
@@ -705,22 +705,19 @@ class Component
             if (!empty($frag)) {
                 $file = substr($file, 0, -strlen($frag));
             }
-            if (preg_match('/\.(js|css|ico|apple)$/i', $file)) {
+            if (preg_match('/\.(ico|css|js)$/i', $file)) {
                 $split = strrpos($file, '.');
                 $ext = substr($file, $split + 1);
                 $name = substr($file, 0, $split);
                 switch ($ext) {
-                    case 'js':
-                        $this->data('js', $file.$frag, $prepend);
+                    case 'ico':
+                        $this->data['ico'] = $file.$frag;
                         break;
                     case 'css':
                         $this->data('css', $file.$frag, $prepend);
                         break;
-                    case 'ico':
-                        $this->data['ico'] = $file.$frag;
-                        break;
-                    case 'apple':
-                        $this->data['apple'] = $name.'.png';
+                    case 'js':
+                        $this->data('js', $file.$frag, $prepend);
                         break;
                 }
             } elseif (substr($file, 1, 5) == 'style') {
@@ -1244,9 +1241,6 @@ EOT;
         $styles = array();
         if (isset($this->data['ico'])) {
             $styles[] = '<link rel="shortcut icon" href="'.$this->data['ico'].'">';
-        }
-        if (isset($this->data['apple'])) {
-            $styles[] = '<link rel="apple-touch-icon" href="'.$this->data['apple'].'">';
         }
         $css = (isset($this->data['css'])) ? $this->data['css'] : array();
         $css = $this->process('css', array_unique($css));
