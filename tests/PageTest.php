@@ -264,10 +264,10 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $page->description = 'Meta Description';
         $page->keywords = 'Meta Keywords';
         $page->robots = false;
-        $viewport = 'name="viewport" content="width=device-width, initial-scale=1.0"';
-        $page->meta($viewport);
+        $viewport = '<meta name="viewport" content="width=device-width, initial-scale=1.0">';
+        $page->meta('name="viewport" content="width=device-width, initial-scale=1.0"');
         $this->assertAttributeEquals(array('meta' => array($viewport)), 'data', $page);
-        $twitter = 'name="twitter:site" content="@bootpress"';
+        $twitter = '<meta name="twitter:site" content="@bootpress">';
         $page->meta(array('name' => 'twitter:site', 'content' => '@bootpress'));
         $this->assertAttributeEquals(array('meta' => array($viewport, $twitter)), 'data', $page);
         
