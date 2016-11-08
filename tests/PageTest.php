@@ -185,7 +185,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertEquals('http://website.com/path/to/folder.html?foo=bar', $page->url());
         $this->assertEquals('http://website.com/', $page->url('index.html'));
         $this->assertEquals('http://website.com/page/index.html', $page->url('page', 'index.php'));
-        $page->url('set', 'folder', 'http://website.com/path/to/folder');
+        $this->assertEquals('http://website.com/path/to/folder', $page->url('set', 'folder', 'http://website.com/path/to/folder'));
         $this->assertEquals('http://website.com/path/to/folder.html', $page->url('folder'));
         $this->assertEquals('http://website.com/path/to/folder/hierarchy.html', $page->url('folder', '//hierarchy.php/'));
         $this->assertEquals(array('foo' => 'bar'), $page->url('params'));
