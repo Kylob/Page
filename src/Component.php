@@ -673,12 +673,12 @@ class Component
     public function meta($args)
     {
         if (is_string($args)) {
-            $this->data('meta', $args, false);
+            $this->data('meta', "<meta {$args}>", false);
         } else {
             foreach ($args as $key => $value) {
                 $args[$key] = $key.'="'.$value.'"';
             }
-            $this->data('meta', implode(' ', $args), false);
+            $this->data('meta', $this->tag('meta', $args), false);
         }
     }
 
@@ -1227,9 +1227,7 @@ EOT;
             $metadata[] = ($this->html['robots']) ? '<meta name="robots" content="'.$this->html['robots'].'">' : '<meta name="robots" content="noindex, nofollow">'; // ie. false or null
         }
         if (isset($this->data['meta'])) {
-            foreach ($this->data['meta'] as $tag) {
-                $metadata[] = '<meta '.$tag.'>';
-            }
+            $metadata[] = array_merge($metadata, $this->data['meta']);
         }
 
         return $metadata;
