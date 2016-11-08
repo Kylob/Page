@@ -719,12 +719,6 @@ class Component
                 }
             } elseif (preg_match('/^\s*<\s*(?P<tag>meta|link|style|script)/i', $file, $match)) {
                 $this->data($match['tag'], $file, $prepend);
-            /*
-            } elseif (substr($file, 1, 5) == 'style') {
-                $this->data('style', $file, $prepend);
-            } elseif (substr($file, 1, 6) == 'script') {
-                $this->data('script', $file, $prepend);
-            */
             } else {
                 $this->data('other', $file, $prepend);
             }
@@ -1251,18 +1245,6 @@ EOT;
                 $styles = array_merge($styles, $this->data[$tag]);
             }
         }
-        /*
-        if (isset($this->data['style'])) {
-            foreach ($this->data['style'] as $style) {
-                $styles[] = $style;
-            }
-        }
-        if (isset($this->data['other'])) {
-            foreach ($this->data['other'] as $other) {
-                $styles[] = $other;
-            }
-        }
-        */
 
         return $styles;
     }
