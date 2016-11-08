@@ -717,7 +717,7 @@ class Component
                         $this->data('js', $file.$frag, $prepend);
                         break;
                 }
-            } elseif (preg_match('/^\s*<\s*(?P<tag>meta|link|style|script)\s/i', $file, $match)) {
+            } elseif (preg_match('/^\s*<\s*(?P<tag>meta|link|style|script)/i', $file, $match)) {
                 $this->data($match['tag'], $file, $prepend);
             /*
             } elseif (substr($file, 1, 5) == 'style') {
@@ -1246,6 +1246,12 @@ EOT;
         foreach ($css as $url) {
             $styles[] = '<link rel="stylesheet" href="'.$url.'">';
         }
+        foreach (array('link', 'style', 'other') as $tag) {
+            if (isset($this->data[$tag])) {
+                $styles = array_merge($styles, $this->data[$tag]);
+            }
+        }
+        /*
         if (isset($this->data['style'])) {
             foreach ($this->data['style'] as $style) {
                 $styles[] = $style;
@@ -1256,6 +1262,7 @@ EOT;
                 $styles[] = $other;
             }
         }
+        */
 
         return $styles;
     }
