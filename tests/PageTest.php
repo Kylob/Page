@@ -300,7 +300,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
     public function testLinkMethod()
     {
         $page = Page::html();
-        $page->link(array('script.js#fancy', 'styles.css', 'favicon.ico', 'custom.js', 'icon.apple'), 'prepend');
+        $page->link(array('script.js#fancy', 'styles.css', 'favicon.ico', 'custom.js'), 'prepend');
         $this->assertAttributeContains(array('script.js#fancy', 'custom.js'), 'data', $page);
         $this->assertAttributeContains(array('styles.css'), 'data', $page);
         $this->assertAttributeContains('favicon.ico', 'data', $page);
@@ -326,7 +326,6 @@ class PageTest extends \BootPress\HTMLUnit\Component
                 '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
                 '<meta name="twitter:site" content="@bootpress">',
                 '<link rel="shortcut icon" href="favicon.ico">',
-                '<link rel="apple-touch-icon" href="icon.png">',
                 '<link rel="stylesheet" href="styles.css">',
                 '<style>body{background-color:#999;}</style>',
                 '<!--[if IE6]>Special instructions for IE 6 here<![endif]-->',
