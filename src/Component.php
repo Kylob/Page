@@ -11,30 +11,92 @@ use AltoRouter;
 
 class Component
 {
+    /**
+     * @var object Either the [Symfony\Component\HttpFoundation\Request](http://symfony.com/doc/current/components/http_foundation.html) object you gave us at ``Page::html()``, or the one we made for you.
+     */
     private $request;
+
+    /**
+     * @var array An array of directory names for reference purposes:
+     *
+     *   - '**base**' => The common dir among all those in this array - don't ever rely on this to be anything in particular.
+     *   - '**page**' => The submitted ``$url['dir']`` when you first accessed the ``Page::html()``.
+     *   - '**$name**' => The ``$name = $page->dirname(__CLASS__)`` directory.
+     *   - '**...**' => Whatever other classes you have ``$page->dirname()``ed.
+     */
     private $dir = array();
+
+    /**
+     * @var array Information about your url's that may come in handy:
+     *
+     *   - '**full**' => The complete url '**base**', '**path**', '**suffix**', and '**query**' as presently constituted.
+     *   - '**base**' => The submitted ``$url['base']`` when you first accessed the ``Page::html()``, including a trailing slash '__/__'.
+     *   - '**path**' => The url path that comes after the '**base**', and before the '**query**', with no leading or trailing slashes.  If this '**format**' is an html page, then it does not include the url '**suffix**'.
+     *   - '**suffix**' => The submitted ``$url['suffix']`` when you first accessed the ``Page::html()``.
+     *   - '**query**' => A string beginning with '**?**' if there are any url params, or blank if not.
+     *   - '**preg**' => The url '**base**', ``preg_quote()``ed, and ready to go.
+     *   - '**chars**' => The submitted ``$url['chars']`` when you first accessed the ``Page::html()``, ``preg_quote()``ed, but with the dot ('**.**'), slashes ('__/__'), question mark ('**?**'), and hash tag ('**#**') removed, so that we can include them as desired.
+     *   - '**html**' => An array of ``$url['suffix']``'s that correspond with html pages.
+     *   - '**format**' => Either '**html**' if the current url's suffix corresponds with an html page, or the current suffix without a leading dot eg. '**pdf**', '**jpg**', etc.
+     *   - '**method**' => How the page is being called eg. '**GET**' or '**POST**'.
+     *   - '**route**' => The current '**path**' with a leading slash ie. ``'/'.$page->url['path']``.
+     *   - '**set**' => An ``array($name => $url, ...)`` of the ``$page->url('set', $name, $url)``'s you (and we) have set.
+     */
     private $url = array();
+
+    /**
+     * @var array The property from which all others are set and retrieved.  The ones we use to ``$page->display()`` your page are:
+     *
+     *   - '**doctype**' => The '``<!doctype html>``' that goes at the top of your HTML page.
+     *   - '**language**' => The ``<html lang="...">`` value.  The default is '**en**'.  If your page no speaka any english, then you can change it to ``$page->language = 'sp'``, or any other [two-letter language abbreviation](http://www.loc.gov/standards/iso639-2/langcodes.html).
+     *   - '**charset**' => The ``<meta charset="...">`` value.  The default is '**utf-8**'.
+     *   - '**title**' => Inserted into the ``<head>`` section within ``<title>`` tags (empty or not).  The default is empty.
+     *   - '**description**' => The ``<meta name="description" content="...">`` value (if any).  The default is empty.
+     *   - '**keywords**' => The ``<meta name="keywords" content="...">`` value (if any).  The default is empty.
+     *   - '**robots**' => If you set this to ``false``, then we'll tell the search engines ``<meta name="robots" content="noindex, nofollow">``: "Don't add this page to your index" (noindex), and "Don't follow any links that may be here" (nofollow) either.  If you want one or the other, then just leave this property alone and you can spell it all out for them in ``$page->meta('name="robots" content="noindex"')``.
+     *   - '**body**' => This used to be useful for Google Maps, and other ugly hacks before the advent of jQuery.  There are better ways to go about this, but it makes for a handy onload handler, or to insert css styles for the body.  Whatever you set here will go inside the ``<body>`` tag.
+     *
+     */
     private $html = array();
-    private $data = array(); // meta, ico, css, style, other, js, jquery, script
-    private $filters = array(); // managed in $this->filter() (public), and retrieved in $this->process() (private)
-    private $testing = false; // $this->send() exit's a Symfony Response if this is false
+
+    /** @var array Stores meta, ico, css, link, style, other, js, jquery, and script info. */
+    private $data = array();
+
+    /** @var array Managed in ``$this->filter()`` (public), and retrieved in ``$this->process()`` (private). */
+    private $filters = array();
+
+    /** @var bool ``$this->send()`` exit's a Symfony Response if this is ``false``. */
+    private $testing = false;
+
+    /** @var object The Singleton pattern. */
     private static $instance;
+
+    /**
+     * @var object A [Symfony\Component\HttpFoundation\Session\Session](http://symfony.com/doc/current/components/http_foundation/sessions.html) instance.  We don't automatically create this for you, until and unless you access it here.  If you already have one going on, then you can ``$page->request->setSession(...)`` it, and we'll use that.  If it's not already started, then we'll do that for you too.
+     */
     private static $session;
 
     /**
-     * This returns a singleton instance of the Page class so that you can access it anywhere.  Passing parameters will only make a difference when calling it for the first time, unless you $overthrow it.
-     * 
-     * @param array $url What you want your website's url to look like, and point to.
-     * 
-     * - '**dir**' - The base directory your website exists in.  We recommend that this be a root folder so that it is not publically accessible, but it can be if you're crazy.
-     * - '**base**' - The root url.  If you specify this, then we will enforce it.  If it starts with https (secured), then your website will be inaccessible via http (insecure).  If you include a subdomain (eg. www) or not, it will be enforced.  This way you don't have duplicate content issues, and know exactly how your website will be accessed.
-     * - '**suffix**' - What you want to come after all of your url (html) paths.  The options are:  '', '**\/**', '**.htm**', '**.html**', '**.shtml**', '**.phtml**', '**.php**', '**.asp**', '**.jsp**', '**.cgi**', '**.cfm**', and '**.pl**'.
-     * - '**chars**' - This lets you specify which characters are permitted within your URLs.  You should restrict this to as few characters as possible.  The default is '**a-z0-9~%.:_-**'.
-     * - '**testing**' - If you include and set this to anything, then any calls to ``$page->send()`` will not ``exit``.  This enables us to unit test responses and not halt the script.
-     * @param object      $request   A Symfony Request object.
-     * @param false|mixed $overthrow If anything but false, then the parameters you pass will overthrow the previous ones submitted.  This is especially useful when unit testing.
-     * 
+     * Get a singleton instance of the Page class, so that your code can always be on the same "Page".  Passing parameters will only make a difference when calling it for the first time, unless you **$overthrow** it.
+     *
+     * @param array  $url       You can override any of the following default options:
+     *
+     * - '**dir**' => The base directory of your website.  I would recommend using a root folder that is not publically accessible.  The default is your public html folder.
+     * - '**base**' => The root url.  If you specify this, then we will enforce it.  If it starts with *'https'* (secured), then your website will be inaccessible via *'http'* (insecure).  If you include a subdomain (eg. *'www'*) or not, it will be enforced.  This way you don't have duplicate content issues, and know exactly how your website will be accessed.  The default is whatever the current url is.
+     * - '**suffix**' => What you want to come after all of your url (html) paths.  The options are:  '' (empty), '**\/**', '**.htm**', '**.html**', '**.shtml**', '**.phtml**', '**.php**', '**.asp**', '**.jsp**', '**.cgi**', '**.cfm**', and '**.pl**'.  The default is nothing.
+     * - '**chars**' => This lets you specify which characters are permitted within your url paths.  You should restrict this to as few characters as possible.  The default is '**a-z0-9~%.:_-**'.
+     * - '**testing**' => If you include and set this to anything, then any calls to ``$page->send()`` will not ``exit``.  This enables us to unit test responses without halting the script.
+     *
+     * @param object $request   A [Symfony\Component\HttpFoundation\Request](http://symfony.com/doc/current/components/http_foundation.html) object.
+     * @param mixed  $overthrow If anything but ``false``, then the parameters you pass will overthrow the previous ones submitted.  This is mainly useful for unit testing.
+     *
      * @return object A singleton Page instance.
+     *
+     * @example
+     *
+     * ```php
+     * $page = \BootPress\Page\Component::html();
+     * ```
      */
     public static function html(array $url = array(), Request $request = null, $overthrow = false)
     {
@@ -50,12 +112,12 @@ class Component
     }
 
     /**
-     * This returns an isolated instance of the Page class so you can use it for whatever.
-     * 
-     * @param array  $url     The same as above.
-     * @param object $request A Symfony Request object.
-     * 
-     * @return object An isolated instance of the Page class.
+     * Get an isolated instance of the Page class, so that you can use it for whatever.
+     *
+     * @param array  $url     The '**base**' url is not enforced here.
+     * @param object $request
+     *
+     * @return object
      */
     public static function isolated(array $url = array(), Request $request = null)
     {
@@ -121,19 +183,18 @@ class Component
     }
 
     /**
-     * Allows you to set HTML Page properties.
-     * 
-     * @param string|array $name  The ``$page->$name`` you would like to set.  You can do this one at a time, or make this an array and set everything at once.
-     * @param mixed        $value The value if the $name (above) is a string.
-     * 
+     * Set Page properties that can be accessed directly via ``$page->$name``.  This is a convenience method as you can also set them directly eg. ``$page->name = 'value'``.  All of these values are stored (and can be accessed) at the ``$page->html`` array.
+     *
+     * @param string|array $name  The property you would like to set.  You can do this one at a time, or make this an array to set multiple values at once.
+     * @param mixed        $value Used if the **$name** is a string.
+     *
+     * @example
+     *
      * ```php
      * $page->set(array(
      *     'title' => 'Sample Page',
      *     'description' => 'Snippet of information',
      *     'keywords' => 'Comma, Spearated, Tags',
-     *     'thumb' => $page->url('base', 'image.jpg'),
-     *     'author' => 'Full Name',
-     *     'published' => 'Feb 7, 2015',
      * ));
      * ```
      */
@@ -186,39 +247,9 @@ class Component
     }
 
     /**
-     * A magic getter for our private properties:.
+     * A magic getter for our private properties.
      *
-     * - '**session**' - The Symfony Session object.
-     * - '**request**' - The Symfony Request object.
-     * - '**dir**' - An array of dirs with the following keys:
-     *   - '**base**' - The common dir among all that follow - don't ever rely on this to be anything in particular.
-     *   - '**page**' - The submitted ``$url['dir']`` when this class was instantiated.
-     *   - '**$name**' - The directory of the ``$name = $page->dirname(__CLASS__)``.
-     *   - '**...**' - Whatever other classes you have ``$page->dirname()``ed.
-     * - '**url**' - Information about your urls that may come in handy:
-     *   - '**full**' - The complete url base, path, and query as presently constituted.
-     *   - '**base**' - The base url.
-     *   - '**path**' - The url path that comes after the base, and before the query.  If this is an html page then it does not include the url suffix - whatever you have set it to.
-     *   - '**suffix**' - Either the currently constituted url suffix, or the desired ``$url['suffix']`` that was set when this class was instantiated.  Includes the leading dot.  If this is not an html page (eg. .pdf, .jpg, etc.), then this will be empty.
-     *   - '**query**' - A string beginning with '**?**' if there are any url params, or blank if not.
-     *   - '**preg**' - The url base ``preg_quote()``ed, and ready to go.
-     *   - '**chars**' - The submitted ``$url['chars']`` when this class was instantiated, ``preg_quote()``ed, but with dot, slashes, question mark and hash tag removed so that we can include them as desired.
-     *   - '**html**' - The array of acceptable ``$url['suffix']``'s that correspont to html pages.
-     *   - '**format**' - The type of page you are currently working with.  Either '**html**' if the ``$page->url['suffix']`` is empty, or the ``$page->url['suffix']`` without the leading dot eg. pdf, jpg, etc.
-     *   - '**method**' - How the page is being called eg. GET or POST
-     *   - '**route**' - The ``$page->url['path']`` with a leading slash ie. ``'/'.$page->url['path']``
-     *   - '**set**' - An ``array($name => $path, ...)`` of the ``$page->url('set', $name, $path)``'s you (and we) have set.
-     * - '**html**' - The private propery from which every other $name will be retrieved.  You can access and modify these at any time.  The default ones are:
-     *   - '**doctype**' => '<!doctype html>' - Goes at the top of your HTML page.
-     *   - '**language**' => 'en' - Gets inserted just beneath the doctype in the html tag.  If your page no speaka any english, then you can change it to ``$page->language = 'sp';``, or any other [two-letter language abbreviation](http://www.loc.gov/standards/iso639-2/langcodes.html).
-     *   - '**charset**' => 'utf-8' - This is the first meta tag that we insert just before the title ie. ``<meta charset="utf-8">``
-     *   - '**title**' => '' - Defines the title of the page, and is inserted into the ``<head>`` section within ``<title>`` tags.
-     *   - '**description**' => '' - Gets inserted into the meta description tag (if it is not empty) where you can give search engines and potential visitors a brief description of the content of your page ie. ``<meta name="description" content="...">``
-     *   - '**keywords**' => '' - A comma-separated list of keywords that you think are relevant to the page at hand.  If it is not empty we put it in a meta keywords tag ie. ``<meta name="keywords" content="...">``
-     *   - '**robots**' => true - If left alone this property does nothing, but if you set ``$page->robots = false;`` then we'll put ``<meta name="robots" content="noindex, nofollow">`` which tells the search engines (robots): "Don't add this page to your index" (noindex), and "Don't follow any links that may be here" (nofollow) either.  If you want one or the other, then just leave this property alone and you can spell it all out for them in ``$page->meta('name="robots" content="noindex"');``
-     *   - '**body**' => '' - This used to be useful for Google Maps, and other ugly hacks before the advent of jQuery.  There are better ways to go about this, but it makes for a handy onload handler or to insert css styles for the body.  Whatever you set here will go inside the ``<body>`` tag.
-     *
-     * @param string $name The ``$page->$name`` whose value you are looking for.
+     * @param string $name
      *
      * @return mixed
      */
@@ -254,11 +285,13 @@ class Component
     }
 
     /**
-     * If one of your visitors gets lost, or you need to redirect them (eg. after a form has been submitted), the this method will eject theme for you.
-     * 
+     * Send your visitor packing to another **$url** eg. after a form has been submitted.
+     *
      * @param string $url                Either the full url, or just the path.
-     * @param int    $http_response_code The status code (302 by default).
-     * 
+     * @param int    $http_response_code The status code.
+     *
+     * @example
+     *
      * ```php
      * $page->eject('users');
      * ```
@@ -271,11 +304,13 @@ class Component
     }
 
     /**
-     * This will ensure that the $url path you want to enforce matches the current path.
-     * 
+     * Ensure that the **$url** path you want to enforce matches the current path.
+     *
      * @param string $url      Either the full url, or just the path.
-     * @param int    $redirect The status code (301 by default).
-     * 
+     * @param int    $redirect The status code.
+     *
+     * @example
+     *
      * ```php
      * echo $page->url['path']; // 'details/former-title-1'
      * $page->enforce('details/current-title-1');
@@ -301,15 +336,17 @@ class Component
     }
 
     /**
-     * This takes a class and determines the directory it resides in so that you can refer to it in ``$page->dir()`` and ``$page->url()``.
-     * 
-     * @param string $class The class you want to reference.
-     * 
-     * @return string A slightly modified string of the $class for you to reference.
-     * 
+     * Determine the directory your **$class** resides in, so that you can refer to it in ``$page->dir()`` and ``$page->url()``.
+     *
+     * @param string $class The ``__CLASS__`` you want to reference.
+     *
+     * @return string A slightly modified **$class** name.
+     *
+     * @example
+     *
      * ```php
      * $name = $page->dirname(__CLASS__);
-     * echo $page->dir($name); // The directory this file resides in
+     * echo $page->dir($name); // The directory your __CLASS__ resides in
      * ```
      */
     public function dirname($class)
@@ -326,10 +363,14 @@ class Component
     }
 
     /**
-     * @param string $folder The path after ``$this->dir['page']``.  Every arg you include in the method will be another folder path.  If you want the directory to be relative to ``$name = $page->dirname(__CLASS__)``, then set the first parameter to $name, and the subsequent arguments (folders) relative to it.  Any empty args will be ignored.
-     * 
-     * @return string The directory path, and ensures it has a trailing slash.
-     * 
+     * Get the absolute path to a directory, including the trailing slash '__/__'.
+     *
+     * @param string $folder The folder path(s) after ``$page->dir['page']``.  Every arg you include in the method will be another folder path.  If you want the directory to be relative to ``$name = $page->dirname(__CLASS__)``, then set the first parameter to ``$name``, and the subsequent arguments (folders) relative to it.  Any empty args will be ignored.
+     *
+     * @return string
+     *
+     * @example
+     *
      * ```php
      * $page->dir(); // returns $page->dir['page'] - the one where your website resides
      * $page->dir('folder', 'path'); // $page->dir['page'].'folder/path/'
@@ -340,9 +381,9 @@ class Component
      * $page->dir($page->dir['page'], '/folder/path/'); // $page->dir['page'].'folder/path/'
      * $page->dir('page', '/folder', '/path/'); // $page->dir['page'].'folder/path/'
      * $page->dir('base', 'folder/path'); // $page->dir['page'].'folder/path/' - 'base' is an alias for 'page'
-     * 
+     *
      * $name = $page->dirname(__CLASS__); // $page->dir[$name] is now the directory where the __CLASS__ resides
-     * $page->dir($name, 'folder'); // the 'folder' relative to __CLASS__ (with trailing slash)
+     * $page->dir($name, 'folder', 'path'); // $page->dir[$name].'folder/path/'
      * ```
      */
     public function dir($folder = null)
@@ -376,9 +417,21 @@ class Component
     }
 
     /**
+     * Get the absolute path to a file.  This method works exactly the same as ``$page->dir(...)``, but doesn't include the trailing slash as it should be pointing to a file.
+     *
      * @param string $name Of the folder(s) and file.  Can span multiple arguments.
-     * 
-     * @return string The file path.  Works exactly the same as ``$page->dir(...)``, but this method doesn't include the trailing slash because it should be pointing to a file.
+     *
+     * @return string
+     *
+     * @example
+     *
+     * ```php
+     * $page->file('image.jpg'); // $page->dir['page'].'image.jpg'
+     * $page->file('files', 'suffixless'); // $page->dir['page'].'files/suffixless'
+     *
+     * $name = $page->dirname(__CLASS__); // $page->dir[$name] is now the directory where the __CLASS__ resides
+     * $page->file($name, 'folder/file.php'); // $page->dir[$name].'folder/file.php'
+     * ```
      */
     public function file($name)
     {
@@ -386,12 +439,14 @@ class Component
     }
 
     /**
-     * Creates a url path (with trailing slash) that you can add to and work with, as opposed to ``$page->url()`` that always returns the ``$page->url['suffix']`` with it.
-     * 
-     * @param string $url Every argument given becomes part of the path, the same as ``$page->dir()`` only with a url.  The first argument can include the base url, be a ``$page->dirname()``, a reference that you ``$page->url('set', ...)``ed, or just be relative to ``$page->url['base']``.
-     * 
-     * @return string A url path with trailing slash - no suffix!
-     * 
+     * Get a url path (with trailing slash '__/__') that you can add to and work with, as opposed to ``$page->url()`` that always returns the ``$page->url['suffix']`` with it.
+     *
+     * @param string $url Every argument given becomes part of the path, the same as ``$page->dir()`` only with a url.  The first argument can include the ``$page->url['base']``, be a ``$page->dirname()``, a reference that you ``$page->url('set', ...)``ed, or just be relative to the ``$page->url['base']``.
+     *
+     * @return string
+     *
+     * @example
+     *
      * ```php
      * $page->path('folder'); // $page->url['base'].'folder/'
      * $page->path('base', 'folder'); // $page->url['base'].'folder/'
@@ -421,28 +476,89 @@ class Component
     }
 
     /**
-     * Allows you to either create a url, or manipulate it's query string and fragment.
-     * 
+     * Create a url, and/or manipulate it's query string and fragment.
+     *
      * @param string $action What you want this method to do.  The options are:
-     * 
-     * - '' (blank) - 
-     * - '**params**' - To get an associative array of the ``$url`` query string.
-     * - '**delete**' - To remove a param (or more) from the ``$url`` query string.
-     * - '**add**' - To add a param (or more) to the ``$url`` query string.
-     * - '**set**' - To ``$page->url['set'][$url] = $value`` that can be referred to here, and in ``$page->path()``.
-     * - '**...**' - Anything else you do will create a url string in the same manner as ``$page->path()`` only with the ``$page->url['suffix']`` included.
-     * @param string       $url   If empty then the ``$page->url['base']`` will be used.
-     * @param string|array $key   What you would like to add to or take from the ``$url``.  This can be a query string parameter, a '**#**', a '**?**', or an array depending on the type of ``$action`` you are looking for.
-     * @param string       $value If ``$action`` equals '**add**', and ``$key`` is not an array, then this is the ``$key``'s value.   Otherwise this argument means nothing.
-     * 
-     * @return string|array The url string if you are creating one, or else:
-     * 
-     * - If ``$action`` equals '**params**' then the ``$url`` query string is returned as an associative array.  Otherwise this method always returns a ``$url`` that has been ampified and is ready to be inserted into your html.
-     * - If ``$action`` equals '**add** or '**delete**':
-     *   - The ``$key``'s will be added to or deleted from the ``$url``'s query string or fragment if ``$key`` equals '#'.
-     *   - If ``$key`` is an array, then foreach key and value, the ``$url`` will be added to or deleted from accordingly.
-     * - If ``$action`` equals '**delete**' and ``$key`` equals '**?**' then the ``$url`` will be returned without any query string at all.
-     * - If no parameters are given then the ``$page->url['full']`` is returned.
+     *
+     *   - '' (blank) - To get the ``$page->url['full']``.
+     *   - '**params**' - To get an associative array of the **$url** query string.
+     *   - '**delete**' - To remove a param (or more) from the **$url** query string.
+     *   - '**add**' - To add a param (or more) to the **$url** query string.
+     *   - '**set**' - To ``$page->url['set'][$url] = $key`` that can be referred to here, and in ``$page->path($url)``.
+     *   - '**...**' - Anything else you do will create a url string in the same manner as ``$page->path()``, only with the ``$page->url['suffix']`` included.
+     *
+     * @param string       $url   If left empty then the ``$page->url['full']`` will be used, otherwise we will ``htmlspecialchars_decode()`` whatever you do give us.  If ``$action == 'set'`` then this is the shortcut name used to reference the url **$key**.
+     * @param string|array $key   Either the url you are '**set**'ing for future reference, or the paramter(s) you want to '**add**' or '**delete**' from the **$url**.
+     * @param string       $value If ``$action == 'add' && !is_array($key)``, then this is the **$key**'s value.   Otherwise this argument means nothing.
+     *
+     * @return string|array The ``htmlspecialchars($url)`` string with the ``$page->url['suffix']`` included for local html pages:
+     *
+     * - If ``$action == 'delete'`` and:
+     *   - If ``$key == '#'`` the fragment will be removed.
+     *   - If ``$key == '?'`` the entire query string will be removed.
+     *   - If ``is_string($key)`` it will be removed from the query string.
+     *   - If ``is_array($key)`` then every value will be removed from the query string.
+     * - If ``$action == 'add'`` and:
+     *   - If ``is_string($key)`` it's **$value** will be added to the query string.
+     *   - If ``is_array($key)`` then every key and value will be added to the query string.
+     *
+     * Except for:
+     *
+     * - If ``$action == 'params'`` then the **$url** query string is returned as an associative array.
+     *
+     * @example
+     *
+     * ```php
+     * // Get the current url
+     * $page->url(); // $page->url['full']
+     *
+     * // 'base' is a reference to the ``$page->url['base']`` url
+     * $page->url('base', 'path'); // http://example.com/path.html
+     *
+     * // 'page' is a reference to the ``$page->dir['page']`` directory
+     * $page->url('page', 'path'); // http://example.com/page/path.html
+     *
+     * // You can include the base url
+     * $page->url($page->url['base'], 'path'); // http://example.com/path.html
+     *
+     * // Or just skip it entirely
+     * $page->url('path'); // http://example.com/path.html
+     *
+     * // The $page->url['suffix'] is enforced for local urls
+     * $page->url('path.php'); // http://example.com/path.html
+     *
+     * // The suffix stays for non-html pages
+     * $page->url('page', 'styles.css'); // http://example.com/page/styles.css
+     *
+     * // Any suffix goes for external urls
+     * $page->url('http://another.com', 'path.php'); // http://another.com/path.php
+     *
+     * // The top level index page is removed
+     * $page->url('index.html'); // http://example.com/
+     *
+     * // For other levels it is not
+     * $page->url('page', 'index.php'); // http://example.com/page/index.html
+     *
+     * // Set a url shortcut
+     * $page->url('set', 'folder', 'http://example.com/path/to/folder');
+     * $page->url('folder'); // http://example.com/path/to/folder.html
+     * $page->url('folder', '//hierarchy.php/'); // http://example.com/path/to/folder/hierarchy.html
+     *
+     * // Get the query params
+     * $page->url('params', 'http://example.com/?foo=bar'); // array('foo' => 'bar')
+     *
+     * // Add to the query params
+     * $url = $page->url('add', 'http://example.com', array('key' => 'value', 'test' => 'string')); // http://example.com/?key=value&amp;test=string
+     * $page->url('add', $url, 'one', 'more'); // http://example.com/?key=value&amp;test=string&amp;one=more
+     *
+     * // Delete from the query params
+     * $page->url('delete', $url, 'key'); // http://example.com/?test=string
+     * $page->url('delete', $url, '?'); // http://example.com/
+     *
+     * // Manipulate fragments
+     * $fragment = $page->url('add', 'http://example.com', '#', 'fragment'); // http://example.com/#fragment
+     * $page->url('delete', $fragment, '#'); // http://example.com/
+     * ```
      */
     public function url($action = '', $url = '', $key = '', $value = null)
     {
@@ -506,10 +622,10 @@ class Component
 
     /**
      * A shortcut for ``$page->request->query->get($key, $default)``.
-     * 
-     * @param string $key     The $_GET[$key].
-     * @param mixed  $default The default value to return if the $_GET[$key] doesn't exits.
-     * 
+     *
+     * @param string $key     The ``$_GET[$key]``.
+     * @param mixed  $default The default value to return if the ``$_GET[$key]`` doesn't exits.
+     *
      * @return mixed
      */
     public function get($key, $default = null)
@@ -519,10 +635,10 @@ class Component
 
     /**
      * A shortcut for ``$page->request->request->get($key, $default)``.
-     * 
-     * @param string $key     The $_POST[$key].
-     * @param mixed  $default The default value to return if the $_POST[$key] doesn't exits.
-     * 
+     *
+     * @param string $key     The ``$_POST[$key]``.
+     * @param mixed  $default The default value to return if the ``$_POST[$key]`` doesn't exits.
+     *
      * @return mixed
      */
     public function post($key, $default = null)
@@ -531,42 +647,41 @@ class Component
     }
 
     /**
-     * Takes the current (or custom) ``$page->url['method']``, and maps it to the paths you provide using the (AltoRouter)[http://altorouter.com/].
-     * 
-     * @param array $map An ``array($route => $target, ...)`` or just ``array($route, ...)``, or any combination thereof.  The $target could be a php file, a method name, or whatever you want that will help you to determine what comes next.  A $route is what you are expecting your uri to look like, and mapping them to variables that you can actually work with.
-     * 
-     * - **folder** will match 'folder'
-     * - **users/[register|sign_in|forgot_password:action]** will match 'users/sign_in' with ``$params['action'] = 'sign_in'``
-     * - **users/[i:id]** will match 'users/12' with ``$params['id'] = 12``
-     * 
-     * Notice that the '**i**' in '**[i:id]**' will match an integer and assign the paramter '**id**' to the value of '**i**'.  You can set or override these shortcuts in **$types** below.  The defaults are:
-     * 
-     * - __*__ - Match all request URIs
-     * - __[i]__ - Match an integer
-     * - __[i:id]__ - Match an integer as 'id'
-     * - __[a:action]__ - Match alphanumeric characters as 'action'
-     * - __[h:key]__ - Match hexadecimal characters as 'key'
-     * - __[:action]__ - Match anything up to the next '__/__', or end of the URI as 'action'
-     * - __[create|edit:action]__ - Match either 'create' or 'edit' as 'action'
-     * - __[*]__ - Catch all (lazy)
-     * - __[*:trailing]__ - Catch all as 'trailing' (lazy)
-     * - __[**:trailing]__ - Catch all (possessive - will match the rest of the URI)
-     * - __.[:format]?__ - Match an optional parameter as 'format'
-     *   - When you put a '__?__' after the block (making it optional), a '__/__' or '__.__' before the block is also optional
-     * 
+     * Map the current **$route** to the paths you provide using the [AltoRouter](http://altorouter.com/).
+     *
+     * @param array $map An ``array($route => $target, ...)`` or just ``array($route, ...)``, or any combination thereof.  The **$target** could be a php file, a method name, or whatever you want that will help you to determine what comes next.  A **$route** is what you are expecting the url path to look like, and mapping them to variables that you can actually work with:
+     *
+     * - '**folder**' will match *'folder'*.
+     * - '**users/[register|sign_in|forgot_password:action]**' will match *'users/sign_in'* with ``$params['action'] = 'sign_in'``.
+     * - '**users/[i:id]**' will match *'users/12'* with ``$params['id'] = 12``.
+     *
+     * Notice that the '**i**' in '**[i:id]**' will match an integer and assign the paramter '**id**' to the value of '**i**'.  You can set or override these shortcuts in the **$types** below.  The defaults are:
+     *
+     * - '__*__' - Match all request URIs.
+     * - '__[i]__' - Match an integer.
+     * - '__[i:id]__' - Match an integer as '**id**'.
+     * - '__[a:action]__' - Match alphanumeric characters as '**action**'.
+     * - '__[h:key]__' - Match hexadecimal characters as '**key**'.
+     * - '__[:action]__' - Match anything up to the next backslash '__/__', or end of the URI as '**action**'.
+     * - '__[create|edit:action]__' - Match either *'create'* or *'edit'* as '**action**'.
+     * - '__[*]__' - Catch all (lazy).
+     * - '__[*:trailing]__' - Catch all as '**trailing**' (lazy).
+     * - '__[**:trailing]__' - Catch all (possessive - will match the rest of the URI).
+     * - '__.[:format]?__' - Match an optional parameter as '**format**'.
+     *   - When you put a question mark '__?__' after the block (making it optional), a backslash '__/__' or dot '__.__' before the block is also optional.
+     *
      * A few more examples for the road:
-     * 
-     * - __posts/[*:title]-[i:id]__ - Matches 'posts/this-is-a-title-123'
-     * - __posts/[create|edit:action]?/[i:id]?__ - Matches 'posts', 'posts/123', 'posts/create', and 'posts/edit/123'
-     * - __output.[xml|json:format]?__ - Matches 'output', 'output.xml', 'output.json'
-     * - __@\.(json|csv)$__ - Matches all requests that end with '.json' or '.csv'
-     * - __!@^admin/__ - Matches all requests that _don't_ start with admin/
-     * - __api/[*:key]/[*:name]__ - Matches 'api/123/456/gadd' where name = '456/gadd'
-     * - __[:controller]?/[:action]?__ - Matches the typical controller/action format
-     * - __[:controller]?/[:method]?/[**:uri]?__ - There's nothing that this won't cover
+     *
+     * - '__posts/[*:title]-[i:id]__' - Matches *'posts/this-is-a-title-123'*.
+     * - '__posts/[create|edit:action]?/[i:id]?__' - Matches *'posts'*, *'posts/123'*, *'posts/create'*, and *'posts/edit/123'*.
+     * - '__output.[xml|json:format]?__' - Matches *'output'*, *'output.xml'*, and *'output.json'*.
+     * - '__@\.(json|csv)$__' - Matches all requests that end with *'.json'* or *'.csv'*.
+     * - '__!@^admin/__' - Matches all requests that **do not** start with *'admin/'*.
+     * - '__[:controller]?/[:action]?__' - Matches the typical controller/action format.
+     * - '__[:controller]?/[:method]?/[**:uri]?__' - There's nothing that this won't cover.
      * @param mixed $route If your don't want to use ``$page->url['method']``, then set this value to the path you want to match against.
      * @param array $types If you want to add to (or override) the shortcut regex's, then you can add them here.  The defaults are:
-     * 
+     *
      * ```php
      * $types = array(
      *     'i'  => '[0-9]++', // integer
@@ -574,25 +689,24 @@ class Component
      *     'h'  => '[0-9A-Fa-f]++', // hexadecimal
      *     '*'  => '.+?', // anything (lazy)
      *     '**' => '.++', // anything (possessive)
-     *     ''   => '[^/\.]++' // not a slash (/) or period (.)
+     *     ''   => '[^/\.]++', // not a slash (/) or period (.)
      * );
      * ```
-     * 
-     * @return mixed False if nothing matches in which case you should ``show_404()``, or an array of information with the following keys:
-     * 
-     * - '**target**' - The route we successfully matched.  If the route is a key, then this is it's value.  Otherwise it is the route itself.
-     * - '**params**' - All of the params we matched to the successful route.
-     * - '**method**' - Either '**POST**' or '**GET**'.
-     * 
+     *
+     * @return mixed Either ``false`` if nothing matches, or an array of information with the following keys:
+     *
+     * - '**target**' => The **$map** route we successfully matched.  If the route is a key, then this is it's value.  Otherwise it is the route itself.
+     * - '**params**' => All of the params we matched to the successful route.
+     * - '**method**' => Either '**POST**' or '**GET**'.
+     *
+     * @example
+     *
      * ```php
-     * $routes = array(
-     *   '' => 'index.php',
-     *   'listings' => 'listings.php',
-     *   'details/[*:title]-[i:id]' => 'details.php',
-     * );
-     * if (is_admin()) $routes['admin/[:action]'] = 'admin.php';
-     * 
-     * if ($route = $page->routes($routes)) {
+     * if ($route = $page->routes(array(
+     *     '' => 'index.php',
+     *     'listings' => 'listings.php',
+     *     'details/[*:title]-[i:id]' => 'details.php',
+     * ))) {
      *     include $route['target'];
      * } else {
      *     $page->send(404);
@@ -618,18 +732,25 @@ class Component
     }
 
     /**
-     * Generates an html tag programatically.
-     * 
-     * @param string $name       The tag's name eg. 'div'
-     * @param array  $attributes An ``array($key => $value, ...)`` of attributes.  If $value is an array (a good idea for classes) then we remove any duplicate or empty values, and implode them with a space in beween.  If the $value is an empty string we ignore the attribute entirely.  If the $key is numeric (ie. not set) then the attribute is it's $value (eg. '**multiple**' or '**selected**'), and we'll delete any $key of the same name (eg. multiple="multiple" or selected="selected").  If you want an empty attribute to be included, then set the $value to null.
-     * @param string $content    All args supplied after the $attributes are stripped of any empty values, and ``implode(' ', ...)``ed.
-     * 
-     * @return string An opening html tag with attributes.  If $content is supplied then we add that, and a closing html tag.
+     * Generate an HTML tag programatically.
+     *
+     * @param string $name       The tag's name eg. *'div'*.
+     * @param array  $attributes An ``array($key => $value, ...)`` of attributes.
+     *
+     *   - If the **$key** is numeric (ie. not set) then the attribute is it's **$value** (eg. *'multiple'* or *'selected'*), and we'll delete any **$key** of the same name (eg. *multiple="multiple"* or *selected="selected"*).
+     *   - If **$value** is an array (a good idea for classes) then we remove any duplicate or empty values, and implode them with a space in beween.
+     *   - If the **$value** is an empty string and not ``null``, we ignore the attribute entirely.
+     *
+     * @param string $content    All args supplied after the **$attributes** are stripped of any empty values, and ``implode(' ', ...)``ed.
+     *
+     * @return string An opening HTML **$tag** with it's **$attributes**.  If **$content** is supplied then we add that, and a closing html tag too.
+     *
+     * @example
      *
      * ```php
      * echo $page->tag('meta', array('name'=>'description', 'content'=>'')); // <meta name="description">
-     * 
-     * echo $page->tag('p', array('class'=>'lead'), 'Content', 'Coming'); // <p class="lead">Content Coming</p>
+     *
+     * echo $page->tag('p', array('class'=>'lead'), 'Body', 'copy'); // <p class="lead">Body copy</p>
      * ```
      */
     public function tag($name, array $attributes, $content = null)
@@ -660,13 +781,15 @@ class Component
     }
 
     /**
-     * Allows you to insert any meta tags (at any time) into the head section of your page.  We already take care of the description, keywords, and robots tags.  If there are any more you would like to add, then you may do so here.  You can only enter one meta tag at a time with this method.
-     * 
-     * @param mixed $args If ``$args`` is a string, then we just include the meta tag as is.  If it is an array then we use the key and value pairs to build the meta tag's attributes.
-     * 
+     * Place a ``<meta>`` tag in your ``<head>``.
+     *
+     * @param mixed $args Either an array of attributes, or a string that gets inserted as is.
+     *
+     * @example
+     *
      * ```php
      * $page->meta('name="author" content="name"'); // or ...
-     * 
+     *
      * $page->meta(array('name'=>'author', 'content'=>'name'));
      * ```
      */
@@ -680,9 +803,13 @@ class Component
     }
 
     /**
-     * @param mixed $link    This can be a string, or an array of javascript, css, and / or icon resources that will be added to the head section of your page.
-     * @param mixed $prepend If this value is anything other than false (I like to use 'prepend'), then all of the ``$link``'s that you just included will be prepended to the stack, as opposed to being inserted after all of the other links you have included.
-     * 
+     * Add ``<link>``(s) to your ``<head>``.
+     *
+     * @param string|array $link    A single string, or an array of '**.ico**', '**.css**', and '**.js**' files.  You can also include ``<meta>``, ``<link>``, ``<style>``, and ``<script>`` tags here, and they will be placed appropriately.
+     * @param mixed        $prepend If anything but ``false`` (I like to use '**prepend**'), then everything you just included will be prepended to the stack, as opposed to being inserted after all of the other links that have gone before.
+     *
+     * @example
+     *
      * ```php
      * $page->link(array(
      *     $page->url('images/favicon.ico'),
@@ -726,10 +853,12 @@ class Component
     }
 
     /**
-     * This will enclose the $css within ``<style>`` tags and place it in the ``<head>`` of your page.
-     * 
+     * Enclose **$css** within ``<style>`` tags and place it in the ``<head>`` of your page.
+     *
      * @param string|array $css
-     * 
+     *
+     * @example
+     *
      * ```php
      * $page->style('body { background-color:red; color:black; }');
      * $page->style(array('body { background-color:red; color:black; }'));
@@ -753,10 +882,12 @@ class Component
     }
 
     /**
-     * This will enclose the $javascript within ``<script>`` tags and place it at the bottom of your page.
-     * 
+     * Enclose **$javascript** within ``<script>`` tags and place it at the bottom of your page.
+     *
      * @param string|array $javascript
-     * 
+     *
+     * @example
+     *
      * ```php
      * $page->script('alert("Hello World");');
      * ```
@@ -770,10 +901,12 @@ class Component
     }
 
     /**
-     * Places all of your jQuery $code into one ``$(document).ready(function(){...})`` at the end of your page.
-     * 
+     * Places all of your jQuery **$code** into one ``$(document).ready(function(){...})`` at the end of your page.
+     *
      * @param string|array $code
-     * 
+     *
+     * @example
+     *
      * ```php
      * $page->jquery('$("button.continue").html("Next Step...");');
      * ```
@@ -784,12 +917,14 @@ class Component
     }
 
     /**
-     * We use this in the Form component to avoid input name collisions.  We use it in the Bootstrap component for accordions, carousels, and the like.  The problem with just incrementing a number and adding it onto something else is that css and jQuery don't like numbered id's, and so we use roman numerals instead and that solves the problem for us.
-     * 
+     * We use this in the Form component to avoid input name collisions.  We use it in the Bootstrap component for accordions, carousels, and the like.  The problem with just incrementing a number and adding it onto something else is that css and jQuery don't like numbered id's.  So we use roman numerals instead, and that solves the problem for us.
+     *
      * @param string $prefix What you would like to come before the roman numeral.  This is not really needed, but when you are looking at your source code, it helps to know what you are looking at.
-     * 
+     *
      * @return string A unique id.
-     * 
+     *
+     * @example
+     *
      * ```php
      * // Assuming this method has not been called before:
      * echo $page->id('name'); // nameI
@@ -817,21 +952,23 @@ class Component
     }
 
     /**
-     * This allows you to map a $path to a folder and $file in $dir so that you can ``$page->load()`` it.  This will essentially make your $file a controller (following the MVC pattern if that means anything to you).
-     * 
-     * @param string $dir  The base directory whose folders you want to map to a $path.
-     * @param string $path The ``$page->url['path']`` or whatever else you want to use.
+     * Map a **$path** to a folder and **$file** in **$dir** so that you can ``$page->load()`` it.  This will essentially make your **$file** a controller, if you subscribe to the MVC pattern.
+     *
+     * @param string $dir  The base directory whose folders you want to map to a **$path**.
+     * @param string $path The ``$page->url['path']``, or whatever else you want to use.
      * @param string $file The filename that must be in the folder to make a match.
-     * 
+     *
      * @return array|null If we have a match then we will return an array with the following info:
-     * 
-     * - '**file**' - The file path for which we made a match.
-     * - '**dir**' - The dir in which the file resides (with trailing slash).
-     * - '**assets**' - The url path (with trailing slash) that corresponds to the dir for including images and other files.
-     * - '**url**' - The url path for linking to other pages that are relative to this dir.
-     * - '**folder**' - The portion of your $path that got us to your $file.
-     * - '**route**' - The remaining portion of your $path that your $file will have to figure out what to do with next.
-     * 
+     *
+     * - '**file**' => The file path for which we made a match.
+     * - '**dir**' => The dir in which the file resides (with trailing slash).
+     * - '**assets**' => The url path (with trailing slash) that corresponds to the dir for including images and other files.
+     * - '**url**' => The url path for linking to other pages that are relative to this dir.
+     * - '**folder**' => The portion of your **$path** that got us to your **$file**.
+     * - '**route**' => The remaining portion of your **$path** that your **$file** will have to figure out what to do with next.
+     *
+     * @example
+     *
      * ```php
      * // Assuming ``$dir = $page->dir('folders')``, and you have a $dir.'users/index.php' file:
      * if ($params = $page->folder($dir, 'users/sign_in')) {
@@ -897,24 +1034,26 @@ class Component
     }
 
     /**
-     * Passes $params to a $file, and returns the output.
-     * 
+     * Passes **$params** to a **$file**, and returns the output.
+     *
      * @param string $file   The file you want to ``include``.
      * @param array  $params Variables you would like your file to receive.
-     * 
+     *
      * @return mixed Whatever you ``$export``ed (could be anything), or a string of all that you ``echo``ed.
-     * 
+     *
+     * @example
+     *
      * ```php
      * $file = $page->file('folders/users/index.php');
-     * 
+     *
      * // Assuming $file has the following code:
      *
      * <?php
      * extract($params);
      * $export = $action.' Users';
-     * 
+     *
      * // Loading it like this would return 'Sign In Users'
-     * 
+     *
      * echo $page->load($file, array('action'=>'Sign In'));
      * ```
      */
@@ -939,46 +1078,49 @@ class Component
 
     /**
      * Enables you to modify just about anything throughout the creation process of your page.
-     * 
+     *
      * @param string   $section  Must be one of:
-     * 
-     * - '**metadata**' - The ``<title>`` and ``<meta>`` data that we include right after the ``<head>`` tag.
-     * - '**css**' - An array of stylesheet link urls.
-     * - '**styles**' - The ``<link>``'s and ``<style>``'s that we include just before the ``</head>`` tag.
-     * - '**html**' - The ``$page->display($content)`` that comes right after the ``<body>`` tag, and just before the javascript we include.
-     * - '**javascript**' - An array of javascript urls.
-     * - '**scripts**' - The ``<script>``'s and jQuery code that we include just before the ``</body>`` tag.
-     * - '**head**' - Everything between the ``<head>`` ... ``</head>`` tags.
-     * - '**body**' - Everything between the ``<body>`` ... ``</body>`` tags.
-     * - '**page**' - The entire page from top to bottom.
-     * - '**response**' - The final Symfony Response object if you ``$page->send()`` it.
+     *
+     *   - '**metadata**' - The ``<title>`` and ``<meta>`` data that we include right after the ``<head>`` tag.
+     *   - '**css**' - An array of stylesheet link urls.
+     *   - '**styles**' - The ``<link>``'s and ``<style>``'s that we include just before the ``</head>`` tag.
+     *   - '**html**' - The ``$page->display($content)`` that comes right after the ``<body>`` tag, and just before the javascript we include.
+     *   - '**javascript**' - An array of javascript urls.
+     *   - '**scripts**' - The ``<script>``'s and jQuery code that we include just before the ``</body>`` tag.
+     *   - '**head**' - Everything between the ``<head>`` ... ``</head>`` tags.
+     *   - '**body**' - Everything between the ``<body>`` ... ``</body>`` tags.
+     *   - '**page**' - The entire page from top to bottom.
+     *   - '**response**' - The final Symfony Response object if you ``$page->send()`` it.
+     *
      * @param callable $function If filtering the '**response**' then we'll pass the ``$page`` (this class instance), ``$response`` (what you are filtering), and ``$type`` ('html', 'json', 'redirect', or ``$page->url['format']``) of content that you are dealing with.
      * @param array    $params
-     *                           - If ``$section`` equals '**response**'
+     *                           - If ``$section == 'response'``
      *                             - These are the page *type* and response *code* conditions that the response must meet in order to be processed.
      *                           - Otherwise:
-     *                             - ``$params`` is an array of arguments that are passed to your $function.
-     *                             - '**this**' must be listed as one of the ``$params``.  It is the ``$section`` as currently constituted, and for which your filter would like to operate on.  If you don't return anything, then that section will magically disappear.
+     *                             - **$params** is an array of arguments that are passed to your **$function**.
+     *                             - '**this**' must be listed as one of the **$params**.  It is the **$section** as currently constituted, and for which your filter would like to operate on.  If you don't return anything, then that section will magically disappear.
      * @param int      $order    The level of importance (or priority) that this filter should receive.  The default is 10.  All filters are called in the order specified here.
-     * 
+     *
+     * @example
+     *
      * ```php
      * $page->filter('response', function ($page, $response, $type) {
      *     return $response->setContent($type);
      * }, array('html', 200));
-     * 
+     *
      * $page->filter('response', function ($page, $response) {
      *     return $response->setContent('json');
      * }, array('json'));
-     * 
+     *
      * $page->filter('response', function ($page, $response) {
      *     return $response->setContent(404);
      * }, array(404));
-     * 
+     *
      * $page->filter('body', function ($prepend, $html, $append) {
      *     return implode(' ', array($prepend, $html, $append));
      * }, array('facebook_like_button', 'this', 'tracking_code');
      * ```
-     * 
+     *
      * @throws \LogicException If something was not set up right.
      */
     public function filter($section, callable $function, array $params = array('this'), $order = 10)
@@ -1004,11 +1146,11 @@ class Component
     }
 
     /**
-     * This method fulfills the measure of the Page component's existence: to be able to manipulate every part of an HTML page at any time.
-     * 
-     * @param string $content Of your page.
-     * 
-     * @return string The complete HTML page from top to bottom.
+     * Piece together the HTML Page from top to bottom.
+     *
+     * @param string $content
+     *
+     * @return string
      */
     public function display($content)
     {
@@ -1060,14 +1202,16 @@ class Component
     }
 
     /**
-     * Sends a Symfony Response object, and allows you to further process and ``$page->filter()`` it.
-     * 
-     * @param object|string|int $response Either a Symfony Response object, the content of your response, or just a quick status code eg. ``$page->send(404)``
+     * Sends a [Symfony Response](http://symfony.com/doc/current/components/http_foundation.html#response) object, and allows you to further process and ``$page->filter()`` it.
+     *
+     * @param object|string|int $response Either a Symfony Response object, the content of your response, or just a quick status code eg. ``$page->send(404)``.
      * @param int               $status   The status code if your ``$response`` is a content string.
      * @param array             $headers  A headers array if your ``response`` is a content string.
-     * 
+     *
      * @return object If you set ``Page::html(array('testing'=>true))`` then we will return the Symfony Response object so that it doesn't halt your script, otherwise it will send the Response and exit the page.
-     * 
+     *
+     * @example
+     *
      * ```php
      * if ($html = $page->load($page->file('index.php'))) {
      *     $page->send($page->display($html));
@@ -1102,8 +1246,8 @@ class Component
     }
 
     /**
-     * Creates and sends a Symfony JsonResponse object.
-     * 
+     * Creates and sends a [Symfony JsonResponse](http://symfony.com/doc/current/components/http_foundation.html#creating-a-json-response) object.
+     *
      * @param mixed $data   The response data.
      * @param int   $status The response status code.
      */
