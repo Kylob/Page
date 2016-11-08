@@ -717,10 +717,14 @@ class Component
                         $this->data('js', $file.$frag, $prepend);
                         break;
                 }
+            } elseif (preg_match('/^\s*<\s*(?P<tag>meta|link|style|script)\s/i', $file, $match)) {
+                $this->data($match['tag'], $file, $prepend);
+            /*
             } elseif (substr($file, 1, 5) == 'style') {
                 $this->data('style', $file, $prepend);
             } elseif (substr($file, 1, 6) == 'script') {
                 $this->data('script', $file, $prepend);
+            */
             } else {
                 $this->data('other', $file, $prepend);
             }
