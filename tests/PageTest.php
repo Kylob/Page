@@ -164,6 +164,14 @@ class PageTest extends \BootPress\HTMLUnit\Component
             'C:\\Users\\Owner\\Desktop\\UniServerZ\\www\\index.php',
             'C:\\Users\\Owner\\Desktop\\image.jpg',
         )));
+        $this->assertEquals('C:/Users/Owner/Desktop/', $page->commonDir(array(
+            'C:/Users/Owner/Desktop/UniServerZ/www/index.php',
+            'C:/Users/Owner/Desktop/image.jpg',
+        )));
+        $this->assertEquals('', $page->commonDir(array(
+            'config.yml',
+            'content/index.html.twig',
+        )));
     }
     
     public function testPathMethod()

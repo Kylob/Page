@@ -1268,7 +1268,7 @@ class Component
         $files = array_values($files);
         $cut = 0;
         $count = count($files);
-        $shortest = min(array_map('strlen', $files));
+        $shortest = min(array_map('mb_strlen', $files));
         while ($cut < $shortest) {
             $char = $files[0][$cut];
             for ($i = 1; $i < $count; ++$i) {
@@ -1278,11 +1278,13 @@ class Component
             }
             ++$cut;
         }
-        $dir = substr($files[0], 0, $cut);
-        if (false !== $slash = strrpos($dir, '/')) {
-            $dir = substr($dir, 0, $slash + 1);
-        } elseif (false !== $slash = strrpos($dir, '\\')) {
-            $dir = substr($dir, 0, $slash + 1);
+        $dir = mb_substr($files[0], 0, $cut);
+        if (false !== $slash = mb_strrpos($dir, '/')) {
+            $dir = mb_substr($dir, 0, $slash + 1);
+        } elseif (false !== $slash = mb_strrpos($dir, '\\')) {
+            $dir = mb_substr($dir, 0, $slash + 1);
+        } else {
+            $dir = ''; // no common folder
         }
 
         return $dir; // with trailing slash (if any)
