@@ -679,7 +679,8 @@ class Component
      * - '__!@^admin/__' - Matches all requests that **do not** start with *'admin/'*.
      * - '__[:controller]?/[:action]?__' - Matches the typical controller/action format.
      * - '__[:controller]?/[:method]?/[**:uri]?__' - There's nothing that this won't cover.
-     * @param mixed $route If your don't want to use ``$page->url['method']``, then set this value to the path you want to match against.
+     *
+     * @param mixed $route If you don't want to use the ``$page->url['route']``, then set this value to the path you want to match against.
      * @param array $types If you want to add to (or override) the shortcut regex's, then you can add them here.  The defaults are:
      *
      * ```php
