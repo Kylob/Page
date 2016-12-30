@@ -102,8 +102,12 @@ class Component
     {
         if ($overthrow || null === static::$instance) {
             $page = static::isolated($url, $request);
-            if (isset($url['base']) && is_string($url['base']) && strcmp($page->url['full'], $page->request->getUri()) !== 0) {
-                $page->eject($page->url['full'], 301);
+            if (isset($url['base']) && is_string($url['base'])) {
+                if ($url = $page->redirect($page->url['path'])) {
+                    $page->eject($url, 301);
+                } elseif {strcmp($page->url['full'], $page->request->getUri()) !== 0) {
+                    $page->eject($page->url['full'], 301);
+                }
             }
             static::$instance = $page;
         }
@@ -1458,6 +1462,11 @@ EOT;
         }
 
         return ($array) ? array($url, $path, $suffix, $query) : $url.$path.$suffix.$query;
+    }
+
+    protected function redirect($path)
+    {
+        return false;
     }
 
     protected function __construct()
