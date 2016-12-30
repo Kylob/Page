@@ -1466,11 +1466,14 @@ EOT;
 
     protected function redirect($path)
     {
+        // preserve referer somehow?
+        // include current query string?
+        // include all params from route to route?
         $file = $this->file('301.txt');
         $redirect = array();
         if (is_file($file)) {
             $map = array();
-            $txt = array_filter(array_map('trim', explode("\n", $txt)));
+            $txt = array_filter(array_map('trim', file($txt)));
             foreach ($txt as $url) {
                 if($url[0] == '[' && substr($url, -1) == ']') {
                     $new = substr($url, 1, -1);
