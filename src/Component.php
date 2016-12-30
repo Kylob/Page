@@ -1466,7 +1466,33 @@ EOT;
 
     protected function redirect($path)
     {
-        return false;
+        $file = $this->file('301.txt');
+        $redirect = array();
+        if (is_file($file)) {
+            $map = array();
+            $txt = array_filter(array_map('trim', explode("\n", $txt)));
+            foreach ($txt as $url) {
+                if($url[0] == '[' && substr($url, -1) == ']') {
+                    $new = substr($url, 1, -1);
+                } elseif (isset($new)) {
+                    $map[$url] = $new;
+                }
+            }
+            while ($route = $this->routes($map, $path)) { // get all redirects
+                $path = $route['target'];
+                if (!empty($route['params'])) {
+                    $path .= '?'.http_build_query($route['params']);
+                }
+                if (in_array($path, $redirect) || count($redirect) > 5) { // an endless loop
+                    $redirect = array();
+                    break;
+                } else {
+                    $redirect[] = $path;
+                }
+            }
+        }
+
+        return (!empty($redirect)) ? array_pop($redirect) : false;
     }
 
     protected function __construct()
