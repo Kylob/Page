@@ -105,7 +105,7 @@ class Component
             if (isset($url['base']) && is_string($url['base'])) {
                 if ($url = $page->redirect($page->url['path'])) {
                     $page->eject($url, 301);
-                } elseif {strcmp($page->url['full'], $page->request->getUri()) !== 0) {
+                } elseif (strcmp($page->url['full'], $page->request->getUri()) !== 0) {
                     $page->eject($page->url['full'], 301);
                 }
             }
