@@ -102,11 +102,12 @@ class Component
     {
         if ($overthrow || null === static::$instance) {
             $page = static::isolated($url, $request);
-            if (isset($url['base']) && is_string($url['base'])) {
-                if ($url = $page->redirect($page->url['path'])) {
-                    $page->eject($url, 301);
-                } elseif (strcmp($page->url['full'], $page->request->getUri()) !== 0) {
-                    $page->eject($page->url['full'], 301);
+            if ($page->url['format'] == 'html' && isset($url['base']) && is_string($url['base'])) {
+                if (($path = $page->redirect()) || strcmp($page->url['full'], $page->request->getUri()) !== 0) {
+                    $page->session->getFlashBag()->add('referer', $page->request->headers->get('referer'));
+                    $page->eject($path ? $path : $page->url['full'], 301);
+                } elseif ($referer = $page->session->getFlashBag->get('referer', null)) {
+                    $page->request->headers->set('referer', array_unshift($referer));
                 }
             }
             static::$instance = $page;
