@@ -104,7 +104,7 @@ class Component
             $page = static::isolated($url, $request);
             if ($page->url['format'] == 'html' && isset($url['base']) && is_string($url['base'])) {
                 if (($path = $page->redirect()) || strcmp($page->url['full'], $page->request->getUri()) !== 0) {
-                    $page->session->getFlashBag()->add('referer', $page->request->headers->get('referer'));
+                    $page->session->getFlashBag()->set('referer', $page->request->headers->get('referer'));
                     $page->eject($path ? $path : $page->url['full'], 301);
                 } elseif ($referer = $page->session->getFlashBag->get('referer', null)) {
                     $page->request->headers->set('referer', array_unshift($referer));
@@ -1465,38 +1465,54 @@ EOT;
         return ($array) ? array($url, $path, $suffix, $query) : $url.$path.$suffix.$query;
     }
 
-    protected function redirect($path)
+    /**
+     * Determine if the current page requires a 301 redirect.
+     *
+     * Routes are derived from a **301.txt** file at your ``$page->url['base']``.  Every path resides on it's own line, with the new path enclosed in '**[]**' brackets, and the former paths(s) you want to redirect coming after it.  For example:
+     *
+     * ```txt
+     * [new]
+     * old
+     * path
+     * regex/[**:folder]?
+     *
+     * [next]
+     * path
+     * ```
+     *
+     * In this example *'old'* will be redirected to *'new'*, and *'path'* will redirect to *'next'* (it was overridden).  *'regex'* will redirect to *'new'*, and *'regex/dir/path'* will be redirected to *'new?folder=dir/path'*.
+     *
+     * @return false|string A path to ``$page->eject()`` your user to.
+     */
+    protected function redirect()
     {
-        // preserve referer somehow?
-        // include current query string?
-        // include all params from route to route?
+        $redirect = false;
         $file = $this->file('301.txt');
-        $redirect = array();
         if (is_file($file)) {
             $map = array();
-            $txt = array_filter(array_map('trim', file($txt)));
-            foreach ($txt as $url) {
+            foreach (array_filter(array_map('trim', file($file))) as $url) {
                 if($url[0] == '[' && substr($url, -1) == ']') {
                     $new = substr($url, 1, -1);
                 } elseif (isset($new)) {
                     $map[$url] = $new;
                 }
             }
-            while ($route = $this->routes($map, $path)) { // get all redirects
+            $endless = array();
+            $path = $page->url['path'];
+            parse_str(ltrim($page->url['query'], '?'), $params);
+            while ($route = $this->routes($map, $path)) { // get all redirects at once
                 $path = $route['target'];
-                if (!empty($route['params'])) {
-                    $path .= '?'.http_build_query($route['params']);
-                }
-                if (in_array($path, $redirect) || count($redirect) > 5) { // an endless loop
-                    $redirect = array();
-                    break;
+                $params += $route['params'];
+                if (in_array($path, $endless) || count($endless) > 5) {
+                    return false;
                 } else {
-                    $redirect[] = $path;
+                    $endless[] = $path;
+                    $redirect = rtrim($path.'?'.http_build_query($params), '?');
                 }
             }
         }
-
-        return (!empty($redirect)) ? array_pop($redirect) : false;
+        
+        return $redirect;
     }
 
     protected function __construct()
