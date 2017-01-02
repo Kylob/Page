@@ -55,7 +55,6 @@ class Component
      *   - '**keywords**' => The ``<meta name="keywords" content="...">`` value (if any).  The default is empty.
      *   - '**robots**' => If you set this to ``false``, then we'll tell the search engines ``<meta name="robots" content="noindex, nofollow">``: "Don't add this page to your index" (noindex), and "Don't follow any links that may be here" (nofollow) either.  If you want one or the other, then just leave this property alone and you can spell it all out for them in ``$page->meta('name="robots" content="noindex"')``.
      *   - '**body**' => This used to be useful for Google Maps, and other ugly hacks before the advent of jQuery.  There are better ways to go about this, but it makes for a handy onload handler, or to insert css styles for the body.  Whatever you set here will go inside the ``<body>`` tag.
-     *
      */
     private $html = array();
 
@@ -79,7 +78,7 @@ class Component
     /**
      * Get a singleton instance of the Page class, so that your code can always be on the same "Page".  Passing parameters will only make a difference when calling it for the first time, unless you **$overthrow** it.
      *
-     * @param array  $url       You can override any of the following default options:
+     * @param array $url You can override any of the following default options:
      *
      * - '**dir**' => The base directory of your website.  I would recommend using a root folder that is not publically accessible.  The default is your public html folder.
      * - '**base**' => The root url.  If you specify this, then we will enforce it.  If it starts with *'https'* (secured), then your website will be inaccessible via *'http'* (insecure).  If you include a subdomain (eg. *'www'*) or not, it will be enforced.  This way you don't have duplicate content issues, and know exactly how your website will be accessed.  The default is whatever the current url is.
@@ -106,8 +105,9 @@ class Component
                 if (($path = $page->redirect()) || strcmp($page->url['full'], $page->request->getUri()) !== 0) {
                     $page->session->getFlashBag()->set('referer', $page->request->headers->get('referer'));
                     $page->eject($path ? $path : $page->url['full'], 301);
-                } elseif ($referer = $page->session->getFlashBag->get('referer', null)) {
-                    $page->request->headers->set('referer', array_unshift($referer));
+                } elseif ($page->session->getFlashBag()->has('referer')) {
+                    $referer = $page->session->getFlashBag()->get('referer');
+                    $page->request->headers->set('referer', array_shift($referer));
                 }
             }
             static::$instance = $page;
@@ -1085,7 +1085,7 @@ class Component
     /**
      * Enables you to modify just about anything throughout the creation process of your page.
      *
-     * @param string   $section  Must be one of:
+     * @param string $section Must be one of:
      *
      *   - '**metadata**' - The ``<title>`` and ``<meta>`` data that we include right after the ``<head>`` tag.
      *   - '**css**' - An array of stylesheet link urls.
@@ -1099,6 +1099,7 @@ class Component
      *   - '**response**' - The final Symfony Response object if you ``$page->send()`` it.
      *
      * @param callable $function If filtering the '**response**' then we'll pass the ``$page`` (this class instance), ``$response`` (what you are filtering), and ``$type`` ('html', 'json', 'redirect', or ``$page->url['format']``) of content that you are dealing with.
+     *
      * @param array    $params
      *                           - If ``$section == 'response'``
      *                             - These are the page *type* and response *code* conditions that the response must meet in order to be processed.
@@ -1491,15 +1492,15 @@ EOT;
         if (is_file($file)) {
             $map = array();
             foreach (array_filter(array_map('trim', file($file))) as $url) {
-                if($url[0] == '[' && substr($url, -1) == ']') {
+                if ($url[0] == '[' && substr($url, -1) == ']') {
                     $new = substr($url, 1, -1);
                 } elseif (isset($new)) {
                     $map[$url] = $new;
                 }
             }
             $endless = array();
-            $path = $page->url['path'];
-            parse_str(ltrim($page->url['query'], '?'), $params);
+            $path = $this->url['path'];
+            parse_str(ltrim($this->url['query'], '?'), $params);
             while ($route = $this->routes($map, $path)) { // get all redirects at once
                 $path = $route['target'];
                 $params += $route['params'];
@@ -1511,7 +1512,7 @@ EOT;
                 }
             }
         }
-        
+
         return $redirect;
     }
 
