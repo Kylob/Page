@@ -282,10 +282,10 @@ class Component
             case 'url':
             case 'html':
                 return $this->$name;
-            break;
+                break;
             default:
                 return $this->html[strtolower($name)];
-            break;
+                break;
         }
     }
 
