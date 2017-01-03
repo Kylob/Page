@@ -54,7 +54,7 @@ class Session
     public function add($key, array $values)
     {
         $get = (array) $this->get($key);
-        $this->set($key, $get + $values);
+        $this->set($key, array_merge($get, $values));
     }
 
     /**
@@ -105,6 +105,7 @@ class Session
     public function keepFlash()
     {
         if ($now = $this->get(array(__CLASS__, 'flash', 'now'))) {
+            print_r($now);
             $this->add(array(__CLASS__, 'flash', 'next'), $now);
         }
     }
