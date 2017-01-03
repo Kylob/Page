@@ -255,6 +255,10 @@ class PageTest extends \BootPress\HTMLUnit\Component
     
     public function testSessionClass()
     {
+        $page = Page::html();
+        $page->session->set(array('key', 'custom'), 'value');
+        $page->session->set('user.id', 100);
+        $page->session->add('user', array('name' => 'Joe Bloggs'));
         print_r($_SESSION, true);
         $this->assertEquals(array(), $_SESSION);
     }
