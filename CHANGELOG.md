@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [1.1] - 2017-01-03
 ### Added
 - 301.txt redirects
-- Lazy session class
+- Lazy session property class
 
 ## [1.0.1] - 2016-12-20
 ### Fixed
