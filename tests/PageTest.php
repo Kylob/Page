@@ -260,6 +260,8 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $page->session->set('user.id', 100);
         $page->session->add('user', array('name' => 'Joe Bloggs'));
         print_r($_SESSION, true);
+        $this->assetEquals('value', $page->session->get('key.custom'));
+        $this->assertEquals(array('id' => 100, 'name' => 'Joe Bloggs'), $page->session->get('user'));
         $this->assertEquals(array(), $_SESSION);
     }
 
