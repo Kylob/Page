@@ -296,7 +296,9 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $_SESSION['BootPress\Page\Session']['flash']['now'] = $_SESSION['BootPress\Page\Session']['flash']['next'];
         unset($_SESSION['BootPress\Page\Session']['flash']['next']);
         $this->assertEquals('allen', $page->session->getFlash('barry'));
+        print_r($_SESSION);
         $page->session->keepFlash();
+        print_r($_SESSION);
         $this->assertEquals('allen', $page->session->getFlash('barry'));
         unset($_SESSION['BootPress\Page\Session']['flash']['now']);
         $this->assertNull($page->session->getFlash('barry'));
