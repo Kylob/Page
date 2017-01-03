@@ -161,7 +161,6 @@ class PageTest extends \BootPress\HTMLUnit\Component
     public function testPageRefererCarryOver()
     {
         // All tests after this depend on this Page configuration, so don't place it higher up the stack.
-        Page::html()->session->getFlashBag()->set('referer', 'UnitTester');
         $page = Page::html(array(
             'dir' => __DIR__.'/page',
             'base' => 'http://website.com',
@@ -170,7 +169,8 @@ class PageTest extends \BootPress\HTMLUnit\Component
         ), Request::create(
             'http://website.com/path/to/folder.html',
             'GET',
-            array('foo' => 'bar')
+            array('foo' => 'bar'),
+            array('referer' => 'UnitTester'),
         ), 'override');
         $this->assertEquals('http://website.com/path/to/folder.html?foo=bar', $page->url['full']);
         $this->assertEquals('UnitTester', $page->request->headers->get('referer'));
