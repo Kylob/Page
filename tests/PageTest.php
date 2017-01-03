@@ -14,13 +14,21 @@ class PageTest extends \BootPress\HTMLUnit\Component
             session_save_path('/tmp');
         }
         ini_set('session.gc_probability', 0);
-        $request = Request::create('http://website.com/path/to/folder.html', 'GET', array('foo' => 'bar'));
+
+        // redirects to https://www.website.com/path/to/folder.html?foo=bar
+        ob_start();
         $page = Page::html(array(
             'dir' => __DIR__.'/page',
             'base' => 'https://www.website.com',
             'suffix' => '.html',
             'testing' => true,
-        ), $request);
+        ), Request::create(
+            'http://website.com/path/to/folder/',
+            'GET',
+            array('foo' => 'bar')
+        ));
+        $output = ob_get_clean();
+        $this->assertGreaterThan(0, strpos($output, '<a href="https://www.website.com/path/to/folder.html?foo=bar">'));
         $this->assertEquals(str_replace('\\', '/', __DIR__.'/page').'/', $page->dir['page']);
         $this->assertEquals('https://www.website.com/', $page->url['base']);
         $this->assertEquals('path/to/folder', $page->url['path']);
@@ -30,21 +38,154 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertEquals('GET', $page->url['method']);
         $this->assertEquals('/path/to/folder', $page->url['route']);
         $this->assertEquals('https://www.website.com/path/to/folder.html?foo=bar', $page->url['full']);
+    }
+
+    public function testRedirectFromFile()
+    {
+        // redirects to https://www.website.com/new.html?foo=bar from 301.txt file
+        ob_start();
         $page = Page::html(array(
             'dir' => __DIR__.'/page',
+            'base' => 'https://www.website.com',
             'suffix' => '.html',
             'testing' => true,
-        ), $request, 'override'); // Url is no longer secured with a www subdomain
+        ), Request::create(
+            'http://website.com/page',
+            'GET',
+            array('foo' => 'bar')
+        ), 'override');
+        $output = ob_get_clean();
+        $this->assertGreaterThan(0, strpos($output, '<a href="https://www.website.com/new.html?foo=bar">'));
     }
+
+    public function testDoubleRedirectFromFile()
+    {
+        // redirects to http://website.com/new.html from 301.txt file
+        ob_start();
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'base' => 'http://website.com',
+            'suffix' => '.html',
+            'testing' => true,
+        ), Request::create(
+            'https://www.website.com/redirect/'
+        ), 'override');
+        $output = ob_get_clean();
+        $this->assertGreaterThan(0, strpos($output, '<a href="http://website.com/new.html">'));
+    }
+
+    public function testRegexRedirectWithParamsFromFile()
+    {
+        // redirects to http://website.com/query/?folder=path from 301.txt file
+        ob_start();
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'base' => 'http://website.com',
+            'suffix' => '/',
+            'testing' => true,
+        ), Request::create(
+            'https://www.website.com/dir/path'
+        ), 'override');
+        $output = ob_get_clean();
+        $this->assertGreaterThan(0, strpos($output, '<a href="http://website.com/query/?folder=path">'));
+    }
+
+    public function testRegexRedirectWithParamsAndQueryStringFromFile()
+    {
+        // redirects to http://website.com/query/?foo=bar&folder=path from 301.txt file
+        ob_start();
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'base' => 'http://website.com',
+            'suffix' => '/',
+            'testing' => true,
+        ), Request::create(
+            'https://www.website.com/dir/path',
+            'GET',
+            array('foo' => 'bar')
+        ), 'override');
+        $output = ob_get_clean();
+        $this->assertGreaterThan(0, strpos($output, '<a href="http://website.com/query/?foo=bar&amp;folder=path">'));
+    }
+
+    public function testRegexRedirectWithoutParamsFromFile()
+    {
+        // redirects to http://website.com/query from 301.txt file
+        ob_start();
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'base' => 'http://website.com',
+            'suffix' => '',
+            'testing' => true,
+        ), Request::create(
+            'https://www.website.com/dir.php'
+        ), 'override');
+        $output = ob_get_clean();
+        $this->assertGreaterThan(0, strpos($output, '<a href="http://website.com/query">'));
+    }
+
+    public function testSameRedirectFromFile()
+    {
+        // same redirect from 301.txt file
+        ob_start();
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'base' => 'http://website.com',
+            'suffix' => '',
+            'testing' => true,
+        ), Request::create(
+            'http://website.com/same'
+        ), 'override');
+        $output = ob_get_clean();
+        $this->assertEmpty($output);
+        $this->assertEquals('http://website.com/same', $page->url['full']);
+    }
+
+    public function testEndlessRedirectFromFile()
+    {
+        // endless redirect from 301.txt file
+        ob_start();
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'base' => 'http://website.com',
+            'suffix' => '',
+            'testing' => true,
+        ), Request::create(
+            'http://website.com/endless'
+        ), 'override');
+        $output = ob_get_clean();
+        $this->assertEmpty($output);
+        $this->assertEquals('http://website.com/endless', $page->url['full']);
+    }
+
+    public function testPageRefererCarryOver()
+    {
+        // All tests after this depend on this Page configuration, so don't place it higher up the stack.
+        $page = Page::html(array(
+            'dir' => __DIR__.'/page',
+            'base' => 'http://website.com',
+            'suffix' => '.html',
+            'testing' => true,
+        ), Request::create(
+            'http://website.com/path/to/folder.html',
+            'GET',
+            array('foo' => 'bar'),
+            array('referer' => 'UnitTester')
+        ), 'override');
+        $this->assertEquals('http://website.com/path/to/folder.html?foo=bar', $page->url['full']);
+        $this->assertEquals('UnitTester', $page->request->headers->get('referer'));
+    }
+
+    // The following tests depend on the above page configuration.
 
     public function testIsolatedStaticMethod()
     {
         $request = Request::create('http://website.com/file.css', 'GET');
-        $page = Page::isolated(array('base'=>'another.com'), $request);
+        $page = Page::isolated(array('base' => 'another.com'), $request);
         $this->assertEquals('http://another.com/', $page->url['base']);
         $this->assertEquals('css', $page->url['format']);
         $this->assertEquals('file.css', $page->url['path']);
-        $page = Page::isolated(array('dir'=>'page/../page/test'));
+        $page = Page::isolated(array('dir' => 'page/../page/test'));
         $dir = str_replace('\\', '/', realpath('').'/page/test/');
         $this->assertStringEndsWith($page->dir['page'], $dir);
         $this->assertFileNotExists($dir);
@@ -90,8 +231,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $page->exists = true; // __set
         $this->assertTrue($page->exists); // __get
         #-- Set a session --#
-        $page->session = new \Symfony\Component\HttpFoundation\Session\Session();
-        $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Session', $page->session);
+        $this->assertInstanceOf('BootPress\Page\Session', $page->session);
         #-- We are going to play now with a "product" multidimensional array --#
         $this->assertNull($page->product['price']); // __get
         $this->assertFalse(isset($page->product['price'])); // goes through __get - not __isset
@@ -112,15 +252,102 @@ class PageTest extends \BootPress\HTMLUnit\Component
         #-- And it works --#
         $this->assertEquals(1, $page->product['quantity']); // __get
     }
-    
+
+    public function testSessionClass()
+    {
+        $page = Page::html();
+
+        // Set a cookie to make the session resumable
+        $page->request->cookies->set(session_name(), true);
+
+        // Test lazy sessions not starting until needed
+        $this->assertNull(\BootPress\Page\Session::$started);
+        $this->assertNull($page->get('missing'));
+        $this->assertNull(\BootPress\Page\Session::$started);
+        $page->session->set(array('key', 'custom'), 'value');
+        $this->assertTrue(\BootPress\Page\Session::$started);
+
+        // Set, add, and get session keys with array and dot notations
+        $page->session->set('user.id', 100);
+        $page->session->add('user', array('name' => 'Joe Bloggs'));
+        $this->assertEquals('value', $page->session->get('key.custom'));
+        $this->assertEquals(array('id' => 100, 'name' => 'Joe Bloggs'), $page->session->get('user'));
+        $this->assertNull($page->session->get(array('user', 'name', 'last')));
+        $this->assertFalse($page->session->get(array('user', 'name', 'last'), false));
+        unset($_SESSION['key'], $_SESSION['user']);
+
+        // Set and get flash messages
+        $page->session->setFlash('barry', 'allen');
+        $this->assertNull($page->session->getFlash('barry'));
+        $this->assertEquals(array(
+            'BootPress\Page\Session' => array(
+                'flash' => array(
+                    'next' => array(
+                        'barry' => 'allen',
+                    ),
+                ),
+            ),
+        ), $_SESSION);
+
+        // Advance next flash messages to now on reload
+        \BootPress\Page\Session::$started = null;
+        $this->assertEquals('allen', $page->session->getFlash('barry'));
+        $this->assertEquals(array(
+            'BootPress\Page\Session' => array(
+                'flash' => array(
+                    'now' => array(
+                        'barry' => 'allen',
+                    ),
+                ),
+            ),
+        ), $_SESSION);
+
+        // Keep the flash, and ensure it persists for current session
+        $page->session->keepFlash();
+        $this->assertEquals('allen', $page->session->getFlash('barry'));
+        $this->assertEquals(array(
+            'BootPress\Page\Session' => array(
+                'flash' => array(
+                    'now' => array(
+                        'barry' => 'allen',
+                    ),
+                    'next' => array(
+                        'barry' => 'allen',
+                    ),
+                ),
+            ),
+        ), $_SESSION);
+
+        // Advance next flash messages to now on reload
+        \BootPress\Page\Session::$started = null;
+        $this->assertEquals('allen', $page->session->getFlash('barry'));
+        $this->assertEquals(array(
+            'BootPress\Page\Session' => array(
+                'flash' => array(
+                    'now' => array(
+                        'barry' => 'allen',
+                    ),
+                ),
+            ),
+        ), $_SESSION);
+
+        // Remove flash messages on reload when there are none
+        \BootPress\Page\Session::$started = null;
+        $this->assertNull($page->session->getFlash('barry'));
+        $this->assertEquals(array(), $_SESSION);
+    }
+
     public function testEjectMethod()
     {
         $page = Page::html();
+        ob_start();
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\RedirectResponse', $page->eject());
+        $output = ob_get_clean();
     }
 
     public function testEnforceMethod()
     {
+        ob_start();
         $page = Page::html();
         $this->assertNull($page->enforce('path/to/folder'));
         $this->assertNull($page->enforce('/path/to/folder.html'));
@@ -129,12 +356,13 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\RedirectResponse', $response);
         $this->assertEquals('http://website.com/fancy/title.html?foo=bar', $response->headers->get('Location'));
         $request = Request::create('http://website.com/image.jpg', 'GET');
-        $page = Page::isolated(array('testing'=>true, 'dir' => dirname(__DIR__), 'suffix' => '.html'), $request);
+        $page = Page::isolated(array('testing' => true, 'dir' => dirname(__DIR__), 'suffix' => '.html'), $request);
         $this->assertNull($page->enforce('image.jpg'));
         $this->assertNull($page->enforce('http://google.com/')); // silently ignores
-        $response =$page->enforce('seo.jpg');
+        $response = $page->enforce('seo.jpg');
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\RedirectResponse', $response);
         $this->assertEquals('http://website.com/seo.jpg', $response->headers->get('Location'));
+        ob_get_clean();
     }
 
     public function testDirnameDirFileAndCommonDirMethods()
@@ -142,13 +370,13 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $page = Page::html();
         $this->assertEquals($page->dir['base'], $page->dir('page'));
         $class = $page->dirname(__CLASS__); // This will move 'base' up one dir
-        
+
         $dir = str_replace('\\', '/', __DIR__.'/page').'/';
         $this->assertEquals($dir, $page->dir['page']);
         $this->assertEquals('bootpress-tests-pagetest', $class);
         $this->assertEquals(dirname($dir).'/', $page->dir['bootpress-tests-pagetest']);
         $this->assertNull($page->dirname('Non\\Existant/Class'));
-        
+
         $this->assertEquals($page->dir['base'], dirname($page->dir('page')).'/');
         $this->assertEquals($page->dir('base'), $page->dir('page')); // base in this instance is an alias for page
         $this->assertEquals($page->dir['page'].'one/more/folder/', $page->dir('one/', '/more/folder'));
@@ -173,7 +401,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
             'content/index.html.twig',
         )));
     }
-    
+
     public function testPathMethod()
     {
         $page = Page::html();
@@ -184,7 +412,6 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertEquals($page->url['base'].'folder/', $page->path($page->url['base'], 'folder'));
         $this->assertEquals('http://website.com/path/folder/', $page->path('special', 'folder'));
         $this->assertEquals($page->url['base'], $page->path());
-        
     }
 
     public function testUrlMethod()
@@ -208,7 +435,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertEquals('http://website.com/path/to/folder.html', $page->url('delete', $fragment, '#'));
         $this->assertEquals('http://website.com/page/styles.css', $page->url('page', 'styles.css'));
     }
-    
+
     public function testGetAndPostMethods()
     {
         $page = Page::html();
@@ -278,7 +505,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $twitter = '<meta name="twitter:site" content="@bootpress">';
         $page->meta(array('name' => 'twitter:site', 'content' => '@bootpress'));
         $this->assertAttributeEquals(array('meta' => array($viewport, $twitter)), 'data', $page);
-        
+
         $this->assertEqualsRegExp(array(
             '<!doctype html>',
             '<html lang="'.$page->language.'">',
@@ -296,7 +523,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
             '</body>',
             '</html>',
         ), $page->display('<p>Content</p>'));
-        
+
         $html = $page->display('<p>Content</p>');
         $this->assertContains('<meta name="description" content="Meta Description">', $html);
         $this->assertContains('<meta name="keywords" content="Meta Keywords">', $html);
@@ -320,7 +547,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertAttributeContains(array('<script>alert("Howdy Partner");</script>'), 'data', $page);
         $page->link('<!--[if IE6]>Special instructions for IE 6 here<![endif]-->');
         $this->assertAttributeContains(array('<!--[if IE6]>Special instructions for IE 6 here<![endif]-->'), 'data', $page);
-        
+
         $this->assertEqualsRegExp(array(
             '<!doctype html>',
             '<html lang="'.$page->language.'">',
@@ -441,10 +668,11 @@ class PageTest extends \BootPress\HTMLUnit\Component
     public function testFilterAndSendMethods()
     {
         $page = Page::html();
-        
+
         // Test filters
         $page->filter('javascript', __NAMESPACE__.'\PageTest::javascriptFilter', array('this'), 5);
         $this->assertAttributeEquals(array(
+            'response' => array(),
             'javascript' => array(
                 array('function' => __NAMESPACE__.'\PageTest::javascriptFilter', 'params' => array('this'), 'order' => 5, 'key' => 0),
             ),
@@ -463,20 +691,20 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $page->filter('response', function ($page, $response) {
             return $response; // removes 'this' from the default $params we're not including
         });
-        
+
         // Send a 200 (default - not specified) response
         $response = $page->send('content');
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Response', $response);
         $this->assertEquals('html', $response->getContent());
-        
+
         // Send a 404 response
         $response = $page->send(404);
         $this->assertInstanceOf('Symfony\Component\HttpFoundation\Response', $response);
         $this->assertEquals(404, $response->getStatusCode());
         $this->assertEquals('404', $response->getContent());
-        
+
         // Send an HTML response
-        $response = $page->send('Content', 200, array('Content-Type'=>'text/html'));
+        $response = $page->send('Content', 200, array('Content-Type' => 'text/html'));
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('Content', $response->getContent());
     }
@@ -491,14 +719,14 @@ class PageTest extends \BootPress\HTMLUnit\Component
     {
         $page = Page::html();
         $this->setExpectedException('\LogicException');
-        $page->filter('section', function(){}, array('bogus'));
+        $page->filter('section', function () {}, array('bogus'));
     }
 
     public function testFilterMethodThisException()
     {
         $page = Page::html();
         $this->setExpectedException('\LogicException');
-        $page->filter('javascript', function(){}, array('that', 'other'), 5);
+        $page->filter('javascript', function () {}, array('that', 'other'), 5);
     }
 
     public function testDisplayMethod()

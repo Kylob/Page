@@ -2,11 +2,11 @@
 
 namespace BootPress\Page;
 
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Session\Session;
 use AltoRouter;
 
 class Component
@@ -55,7 +55,6 @@ class Component
      *   - '**keywords**' => The ``<meta name="keywords" content="...">`` value (if any).  The default is empty.
      *   - '**robots**' => If you set this to ``false``, then we'll tell the search engines ``<meta name="robots" content="noindex, nofollow">``: "Don't add this page to your index" (noindex), and "Don't follow any links that may be here" (nofollow) either.  If you want one or the other, then just leave this property alone and you can spell it all out for them in ``$page->meta('name="robots" content="noindex"')``.
      *   - '**body**' => This used to be useful for Google Maps, and other ugly hacks before the advent of jQuery.  There are better ways to go about this, but it makes for a handy onload handler, or to insert css styles for the body.  Whatever you set here will go inside the ``<body>`` tag.
-     *
      */
     private $html = array();
 
@@ -71,15 +70,13 @@ class Component
     /** @var object The Singleton pattern. */
     private static $instance;
 
-    /**
-     * @var object A [Symfony\Component\HttpFoundation\Session\Session](http://symfony.com/doc/current/components/http_foundation/sessions.html) instance.  We don't automatically create this for you, until and unless you access it here.  If you already have one going on, then you can ``$page->request->setSession(...)`` it, and we'll use that.  If it's not already started, then we'll do that for you too.
-     */
+    /** @var object A BootPress\Page\Session instance. */
     private static $session;
 
     /**
      * Get a singleton instance of the Page class, so that your code can always be on the same "Page".  Passing parameters will only make a difference when calling it for the first time, unless you **$overthrow** it.
      *
-     * @param array  $url       You can override any of the following default options:
+     * @param array $url You can override any of the following default options:
      *
      * - '**dir**' => The base directory of your website.  I would recommend using a root folder that is not publically accessible.  The default is your public html folder.
      * - '**base**' => The root url.  If you specify this, then we will enforce it.  If it starts with *'https'* (secured), then your website will be inaccessible via *'http'* (insecure).  If you include a subdomain (eg. *'www'*) or not, it will be enforced.  This way you don't have duplicate content issues, and know exactly how your website will be accessed.  The default is whatever the current url is.
@@ -102,8 +99,19 @@ class Component
     {
         if ($overthrow || null === static::$instance) {
             $page = static::isolated($url, $request);
-            if (isset($url['base']) && is_string($url['base']) && strcmp($page->url['full'], $page->request->getUri()) !== 0) {
-                $page->eject($page->url['full'], 301);
+            if ($page->url['format'] == 'html' && isset($url['base']) && is_string($url['base'])) {
+                if (($path = $page->redirect()) || strcmp($page->url['full'], $page->request->getUri()) !== 0) {
+                    $page->filter('response', function ($page, $response) {
+                        $cookie = new Cookie('referer', $page->request->headers->get('referer'), time() + 60);
+                        $response->headers->setCookie($cookie);
+                    }, array('redirect', 301));
+                    $page->eject($path ? $path : $page->url['full'], 301);
+                } elseif ($referer = $page->request->cookies->get('referer')) {
+                    $page->request->headers->set('referer', $referer);
+                    $page->filter('response', function ($page, $response) {
+                        $response->headers->clearCookie('referer');
+                    });
+                }
             }
             static::$instance = $page;
         }
@@ -261,13 +269,7 @@ class Component
         switch ($name) {
             case 'session':
                 if (is_null(static::$session)) {
-                    static::$session = ($this->request->hasSession()) ? $this->request->getSession() : new Session();
-                    if (!static::$session->isStarted()) {
-                        static::$session->start();
-                    }
-                    if (!$this->request->hasSession()) {
-                        $this->request->setSession(static::$session);
-                    }
+                    static::$session = new Session;
                 }
 
                 return static::$session;
@@ -277,10 +279,10 @@ class Component
             case 'url':
             case 'html':
                 return $this->$name;
-            break;
+                break;
             default:
                 return $this->html[strtolower($name)];
-            break;
+                break;
         }
     }
 
@@ -1080,7 +1082,7 @@ class Component
     /**
      * Enables you to modify just about anything throughout the creation process of your page.
      *
-     * @param string   $section  Must be one of:
+     * @param string $section Must be one of:
      *
      *   - '**metadata**' - The ``<title>`` and ``<meta>`` data that we include right after the ``<head>`` tag.
      *   - '**css**' - An array of stylesheet link urls.
@@ -1094,6 +1096,7 @@ class Component
      *   - '**response**' - The final Symfony Response object if you ``$page->send()`` it.
      *
      * @param callable $function If filtering the '**response**' then we'll pass the ``$page`` (this class instance), ``$response`` (what you are filtering), and ``$type`` ('html', 'json', 'redirect', or ``$page->url['format']``) of content that you are dealing with.
+     *
      * @param array    $params
      *                           - If ``$section == 'response'``
      *                             - These are the page *type* and response *code* conditions that the response must meet in order to be processed.
@@ -1458,6 +1461,56 @@ EOT;
         }
 
         return ($array) ? array($url, $path, $suffix, $query) : $url.$path.$suffix.$query;
+    }
+
+    /**
+     * Determine if the current page requires a 301 redirect.
+     *
+     * Routes are derived from a **301.txt** file at your ``$page->url['base']``.  Every path resides on it's own line, with the new path enclosed in '**[]**' brackets, and the former paths(s) you want to redirect coming after it.  For example:
+     *
+     * ```txt
+     * [new]
+     * old
+     * path
+     * regex/[**:folder]?
+     *
+     * [next]
+     * path
+     * ```
+     *
+     * In this example *'old'* will be redirected to *'new'*, and *'path'* will redirect to *'next'* (it was overridden).  *'regex'* will redirect to *'new'*, and *'regex/dir/path'* will be redirected to *'new?folder=dir/path'*.
+     *
+     * @return false|string A path to ``$page->eject()`` your user to.
+     */
+    protected function redirect()
+    {
+        $redirect = false;
+        $file = $this->file('301.txt');
+        if (is_file($file)) {
+            $map = array();
+            foreach (array_filter(array_map('trim', file($file))) as $url) {
+                if ($url[0] == '[' && substr($url, -1) == ']') {
+                    $new = substr($url, 1, -1);
+                } elseif (isset($new)) {
+                    $map[$url] = $new;
+                }
+            }
+            $endless = array();
+            $path = $this->url['path'];
+            parse_str(ltrim($this->url['query'], '?'), $params);
+            while ($route = $this->routes($map, $path)) { // get all redirects at once
+                $path = $route['target'];
+                $params += $route['params'];
+                if (in_array($path, $endless) || count($endless) > 5) {
+                    return false;
+                } else {
+                    $endless[] = $path;
+                    $redirect = rtrim($path.'?'.http_build_query($params), '?');
+                }
+            }
+        }
+
+        return $redirect;
     }
 
     protected function __construct()
