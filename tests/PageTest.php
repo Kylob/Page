@@ -591,10 +591,10 @@ class PageTest extends \BootPress\HTMLUnit\Component
         // Test filters
         $page->filter('javascript', __NAMESPACE__.'\PageTest::javascriptFilter', array('this'), 5);
         $this->assertAttributeEquals(array(
+            'response' => array(),
             'javascript' => array(
                 array('function' => __NAMESPACE__.'\PageTest::javascriptFilter', 'params' => array('this'), 'order' => 5, 'key' => 0),
             ),
-            'response' => array(),
         ), 'filters', $page);
         $html = $page->display('<p>Content</p>');
         $this->assertContains('<script src="filter.js"></script>', $html);
