@@ -2,6 +2,8 @@
 
 namespace BootPress\Page;
 
+use BootPress\Page\Component as Page;
+
 class Session
 {
     /** @var bool A static confirmation that the session has been started, and the flash vars managed. */
