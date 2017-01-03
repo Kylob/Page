@@ -272,6 +272,10 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertNull($page->session->get(array('user', 'name', 'last')));
         $this->assertFalse($page->session->get(array('user', 'name', 'last'), false));
         
+        // Set, get, and keep flash messages
+        $page->session->setFlash('barry', 'allen');
+        $this->assertNull($page->session->getFlash('barry'));
+        
         // Make sure our $_SESSION looks as we expect it to
         $this->assertEquals(array(
             'key' => array('custom' => 'value'),
@@ -279,11 +283,14 @@ class PageTest extends \BootPress\HTMLUnit\Component
                 'id' => 100,
                 'name' => 'Joe Bloggs',
             ),
+            'BootPress\Page\Session' => array(
+                'flash' => array(
+                    'next' => array(
+                        'barry' => 'allen',
+                    ),
+                ),
+            ),
         ), $_SESSION);
-        
-        // Set, get, and keep flash messages
-        $page->session->setFlash('barry', 'allen');
-        $this->assertNull($page->session->getFlash('barry'));
         
         print_r($_SESSION);
         
