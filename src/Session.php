@@ -7,12 +7,7 @@ use BootPress\Page\Component as Page;
 class Session
 {
     /** @var bool A static confirmation that the session has been started, and the flash vars managed. */
-    private static $started;
-
-    public function __get($name)
-    {
-        return ($name == 'started') ? self::$started : null;
-    }
+    public static $started;
 
     /**
      * Set the **$value** of a $_SESSION[$key].  Every arg (or array value) will work it's way up the stack, so that you can establish any key within the array.
@@ -30,13 +25,11 @@ class Session
     public function set($key, $value)
     {
         if (!is_null($value) && $this->started()) {
-            $merge = array();
-            $session = &$merge;
+            $merge = &$_SESSION;
             foreach ($this->explode($key) as $name) {
-                $session = &$session[$name];
+                $merge = &$merge[$name];
             }
-            $session = $value;
-            $_SESSION = array_merge($_SESSION, $merge);
+            $merge = $value;
         }
     }
 
@@ -55,9 +48,7 @@ class Session
     public function add($key, array $values)
     {
         $get = (array) $this->get($key);
-        echo 'get: '.print_r($get, true);
         $this->set($key, $get + $values);
-        echo 'get: '.print_r($this->get($key), true);
     }
 
     /**
@@ -108,9 +99,7 @@ class Session
     public function keepFlash()
     {
         if ($now = $this->get(array(__CLASS__, 'flash', 'now'))) {
-            echo 'now: '.print_r($now, true);
             $this->add(array(__CLASS__, 'flash', 'next'), $now);
-            echo 'now: '.print_r($this->get(array(__CLASS__, 'flash', 'now')), true);
         }
     }
 
@@ -137,18 +126,8 @@ class Session
     private function started()
     {
         if (is_null(self::$started)) {
-            switch (session_status()) {
-                case \PHP_SESSION_NONE:
-                    self::$started = session_start(); // true or false
-                    break;
-                case \PHP_SESSION_ACTIVE:
-                    self::$started = true;
-                    break;
-                default: // \PHP_SESSION_DISABLED
-                    self::$started = false;
-                    break;
-            }
-            if (self::$started) { // manage flash values
+            self::$started = (session_status() === PHP_SESSION_ACTIVE) ? true : session_start();
+            if (self::$started) {
                 $page = Page::html();
                 if ($page->url['format'] == 'html' && !$page->request->isXmlHttpRequest()) {
                     if (isset($_SESSION[__CLASS__]['flash']['next'])) {
