@@ -283,7 +283,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
         
         // Set, get, and keep flash messages
         $page->session->setFlash('barry', 'allen');
-        $this->assertEquals('null', $page->session->getFlash('barry'));
+        $this->assertNull($page->session->getFlash('barry'));
         
         print_r($_SESSION);
         
