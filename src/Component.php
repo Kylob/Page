@@ -109,8 +109,8 @@ class Component
                         $response->headers->setCookie($cookie);
                     }, array('redirect', 301));
                     $page->eject($path ? $path : $page->url['full'], 301);
-                } elseif ($page->request->cookies->get('referer')) {
-                    $page->request->headers->set('referer', array_shift($referer));
+                } elseif ($referer = $page->request->cookies->get('referer')) {
+                    $page->request->headers->set('referer', $referer);
                     $page->filter('response', function ($page, $response) {
                         $response->headers->clearCookie('referer');
                     });
