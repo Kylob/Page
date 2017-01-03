@@ -292,6 +292,16 @@ class PageTest extends \BootPress\HTMLUnit\Component
             ),
         ), $_SESSION);
         
+        // Swap the flash
+        $_SESSION['Bootpress\Page\Session']['flash']['now'] = $_SESSION['Bootpress\Page\Session']['flash']['next'];
+        unset($_SESSION['Bootpress\Page\Session']['flash']['next']);
+        $this->assertEquals('allen', $page->session->getFlash('barry'));
+        $page->session->keepFlash();
+        $this->assertEquals('allen', $page->session->getFlash('barry'));
+        unset($_SESSION['Bootpress\Page\Session']['flash']['now']);
+        $this->assertNull($page->session->getFlash('barry'));
+        
+        
         print_r($_SESSION);
         
     }
