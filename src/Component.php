@@ -7,7 +7,6 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Session\Session;
 use AltoRouter;
 
 class Component
@@ -71,9 +70,7 @@ class Component
     /** @var object The Singleton pattern. */
     private static $instance;
 
-    /**
-     * @var object A [Symfony\Component\HttpFoundation\Session\Session](http://symfony.com/doc/current/components/http_foundation/sessions.html) instance.  We don't automatically create this for you, until and unless you access it here.  If you already have one going on, then you can ``$page->request->setSession(...)`` it, and we'll use that.  If it's not already started, then we'll do that for you too.
-     */
+    /** @var object A BootPress\Page\Session instance. */
     private static $session;
 
     /**
@@ -272,13 +269,7 @@ class Component
         switch ($name) {
             case 'session':
                 if (is_null(static::$session)) {
-                    static::$session = ($this->request->hasSession()) ? $this->request->getSession() : new Session();
-                    if (!static::$session->isStarted()) {
-                        static::$session->start();
-                    }
-                    if (!$this->request->hasSession()) {
-                        $this->request->setSession(static::$session);
-                    }
+                    static::$session = new Session;
                 }
 
                 return static::$session;
