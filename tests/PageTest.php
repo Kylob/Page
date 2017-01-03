@@ -170,7 +170,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
             'http://website.com/path/to/folder.html',
             'GET',
             array('foo' => 'bar'),
-            array('referer' => 'UnitTester'),
+            array('referer' => 'UnitTester')
         ), 'override');
         $this->assertEquals('http://website.com/path/to/folder.html?foo=bar', $page->url['full']);
         $this->assertEquals('UnitTester', $page->request->headers->get('referer'));
