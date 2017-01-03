@@ -252,18 +252,21 @@ class PageTest extends \BootPress\HTMLUnit\Component
         #-- And it works --#
         $this->assertEquals(1, $page->product['quantity']); // __get
     }
-    
+
     public function testSessionClass()
     {
         $page = Page::html();
-        
-        // Test session not started until it is needed
-        $this->assertNull($page->session->started);
+
+        // Set a cookie to make the session resumable
+        $page->request->cookies->set(session_name(), true);
+
+        // Test lazy sessions not starting until needed
+        $this->assertNull(\BootPress\Page\Session::$started);
         $this->assertNull($page->get('missing'));
-        $this->assertNull($page->session->started);
+        $this->assertNull(\BootPress\Page\Session::$started);
         $page->session->set(array('key', 'custom'), 'value');
-        $this->assertTrue($page->session->started);
-        
+        $this->assertTrue(\BootPress\Page\Session::$started);
+
         // Set, add, and get session keys with array and dot notations
         $page->session->set('user.id', 100);
         $page->session->add('user', array('name' => 'Joe Bloggs'));
@@ -271,18 +274,12 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertEquals(array('id' => 100, 'name' => 'Joe Bloggs'), $page->session->get('user'));
         $this->assertNull($page->session->get(array('user', 'name', 'last')));
         $this->assertFalse($page->session->get(array('user', 'name', 'last'), false));
-        
-        // Set, get, and keep flash messages
+        unset($_SESSION['key'], $_SESSION['user']);
+
+        // Set and get flash messages
         $page->session->setFlash('barry', 'allen');
         $this->assertNull($page->session->getFlash('barry'));
-        
-        // Make sure our $_SESSION looks as we expect it to
         $this->assertEquals(array(
-            'key' => array('custom' => 'value'),
-            'user' => array(
-                'id' => 100,
-                'name' => 'Joe Bloggs',
-            ),
             'BootPress\Page\Session' => array(
                 'flash' => array(
                     'next' => array(
@@ -291,21 +288,53 @@ class PageTest extends \BootPress\HTMLUnit\Component
                 ),
             ),
         ), $_SESSION);
-        
-        // Swap the flash
-        $_SESSION['BootPress\Page\Session']['flash']['now'] = $_SESSION['BootPress\Page\Session']['flash']['next'];
-        unset($_SESSION['BootPress\Page\Session']['flash']['next']);
+
+        // Advance next flash messages to now on reload
+        \BootPress\Page\Session::$started = null;
         $this->assertEquals('allen', $page->session->getFlash('barry'));
-        print_r($_SESSION);
+        $this->assertEquals(array(
+            'BootPress\Page\Session' => array(
+                'flash' => array(
+                    'now' => array(
+                        'barry' => 'allen',
+                    ),
+                ),
+            ),
+        ), $_SESSION);
+
+        // Keep the flash, and ensure it persists for current session
         $page->session->keepFlash();
-        print_r($_SESSION);
         $this->assertEquals('allen', $page->session->getFlash('barry'));
-        unset($_SESSION['BootPress\Page\Session']['flash']['now']);
+        $this->assertEquals(array(
+            'BootPress\Page\Session' => array(
+                'flash' => array(
+                    'now' => array(
+                        'barry' => 'allen',
+                    ),
+                    'next' => array(
+                        'barry' => 'allen',
+                    ),
+                ),
+            ),
+        ), $_SESSION);
+
+        // Advance next flash messages to now on reload
+        \BootPress\Page\Session::$started = null;
+        $this->assertEquals('allen', $page->session->getFlash('barry'));
+        $this->assertEquals(array(
+            'BootPress\Page\Session' => array(
+                'flash' => array(
+                    'now' => array(
+                        'barry' => 'allen',
+                    ),
+                ),
+            ),
+        ), $_SESSION);
+
+        // Remove flash messages on reload when there are none
+        \BootPress\Page\Session::$started = null;
         $this->assertNull($page->session->getFlash('barry'));
-        
-        
-        print_r($_SESSION);
-        
+        $this->assertEquals(array(), $_SESSION);
     }
 
     public function testEjectMethod()
