@@ -262,7 +262,13 @@ class PageTest extends \BootPress\HTMLUnit\Component
         print_r($_SESSION, true);
         $this->assertEquals('value', $page->session->get('key.custom'));
         $this->assertEquals(array('id' => 100, 'name' => 'Joe Bloggs'), $page->session->get('user'));
-        $this->assertEquals(array(), $_SESSION);
+        $this->assertEquals(array(
+            'key' => array('custom' => 'value'),
+            'user' => array(
+                'id' => 100,
+                'name' => 'Joe Bloggs',
+            ),
+        ), $_SESSION);
     }
 
     public function testEjectMethod()
