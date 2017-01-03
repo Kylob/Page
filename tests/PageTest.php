@@ -257,9 +257,6 @@ class PageTest extends \BootPress\HTMLUnit\Component
     {
         $page = Page::html();
 
-        // Set a cookie to make the session resumable
-        $page->request->cookies->set(session_name(), true);
-
         // Test lazy sessions not starting until needed
         $this->assertNull(\BootPress\Page\Session::$started);
         $this->assertNull($page->get('missing'));
