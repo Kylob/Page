@@ -106,9 +106,9 @@ class Session
     public function keepFlash()
     {
         if ($now = $this->get(array(__CLASS__, 'flash', 'now'))) {
-            print_r($now);
+            echo 'now: '.print_r($now, true);
             $this->add(array(__CLASS__, 'flash', 'next'), $now);
-            print_r($this->get(array(__CLASS__, 'flash', 'now')));
+            echo 'now: '.print_r($this->get(array(__CLASS__, 'flash', 'now')), true);
         }
     }
 
