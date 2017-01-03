@@ -55,7 +55,9 @@ class Session
     public function add($key, array $values)
     {
         $get = (array) $this->get($key);
+        echo 'get: '.print_r($get, true);
         $this->set($key, $get + $values);
+        echo 'get: '.print_r($this->get($key), true);
     }
 
     /**
