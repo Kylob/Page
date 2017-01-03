@@ -115,7 +115,7 @@ class Session
      */
     private function resumable()
     {
-        return (self::$started || Page::html()->request->cookies->get(session_name())) ? true : false;
+        return (isset($_SESSION) || self::$started || Page::html()->request->cookies->get(session_name())) ? true : false;
     }
 
     /**
