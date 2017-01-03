@@ -13,6 +13,7 @@ class Session
     {
         return ($name == 'started') ? self::$started : null;
     }
+
     /**
      * Set the **$value** of a $_SESSION[$key].  Every arg (or array value) will work it's way up the stack, so that you can establish any key within the array.
      *
@@ -54,7 +55,7 @@ class Session
     public function add($key, array $values)
     {
         $get = (array) $this->get($key);
-        $this->set($key, array_merge($get, $values));
+        $this->set($key, $get + $values);
     }
 
     /**
@@ -107,6 +108,7 @@ class Session
         if ($now = $this->get(array(__CLASS__, 'flash', 'now'))) {
             print_r($now);
             $this->add(array(__CLASS__, 'flash', 'next'), $now);
+            print_r($this->get(array(__CLASS__, 'flash', 'now')));
         }
     }
 
