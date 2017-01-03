@@ -231,10 +231,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $page->exists = true; // __set
         $this->assertTrue($page->exists); // __get
         #-- Set a session --#
-        $page->session = new \Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage(array(
-            'cache_limiter' => session_cache_limiter(),
-        ));
-        $this->assertInstanceOf('Symfony\Component\HttpFoundation\Session\Session', $page->session);
+        $this->assertInstanceOf('BootPress\Page\Session', $page->session);
         #-- We are going to play now with a "product" multidimensional array --#
         $this->assertNull($page->product['price']); // __get
         $this->assertFalse(isset($page->product['price'])); // goes through __get - not __isset
