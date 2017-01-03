@@ -252,6 +252,12 @@ class PageTest extends \BootPress\HTMLUnit\Component
         #-- And it works --#
         $this->assertEquals(1, $page->product['quantity']); // __get
     }
+    
+    public function testSessionClass()
+    {
+        print_r($_SESSION, true);
+        $this->assertEquals(array(), $_SESSION);
+    }
 
     public function testEjectMethod()
     {
