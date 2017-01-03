@@ -2,6 +2,7 @@
 
 namespace BootPress\Page;
 
+use Symfony\Component\HttpFoundation\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -103,11 +104,16 @@ class Component
             $page = static::isolated($url, $request);
             if ($page->url['format'] == 'html' && isset($url['base']) && is_string($url['base'])) {
                 if (($path = $page->redirect()) || strcmp($page->url['full'], $page->request->getUri()) !== 0) {
-                    $page->session->getFlashBag()->set('referer', $page->request->headers->get('referer'));
+                    $page->filter('response', function ($page, $response) {
+                        $cookie = new Cookie('referer', $page->request->headers->get('referer'), time() + 60);
+                        $response->headers->setCookie($cookie);
+                    }, array('redirect', 301));
                     $page->eject($path ? $path : $page->url['full'], 301);
-                } elseif ($page->session->getFlashBag()->has('referer')) {
-                    $referer = $page->session->getFlashBag()->get('referer');
+                } elseif ($page->request->cookies->get('referer')) {
                     $page->request->headers->set('referer', array_shift($referer));
+                    $page->filter('response', function ($page, $response) {
+                        $response->headers->clearCookie('referer');
+                    });
                 }
             }
             static::$instance = $page;
