@@ -256,12 +256,23 @@ class PageTest extends \BootPress\HTMLUnit\Component
     public function testSessionClass()
     {
         $page = Page::html();
+        
+        // Test session not started until it is needed
+        $this->assertNull($page->session->started);
+        $this->assertNull($page->get('missing'));
+        $this->assertNull($page->session->started);
         $page->session->set(array('key', 'custom'), 'value');
+        $this->assertTrue($page->session->started);
+        
+        // Set, add, and get session keys with array and dot notations
         $page->session->set('user.id', 100);
         $page->session->add('user', array('name' => 'Joe Bloggs'));
-        print_r($_SESSION, true);
         $this->assertEquals('value', $page->session->get('key.custom'));
         $this->assertEquals(array('id' => 100, 'name' => 'Joe Bloggs'), $page->session->get('user'));
+        $this->assertNull($page->session->get(array('user', 'name', 'last')));
+        $this->assertFalse($page->session->get(array('user', 'name', 'last'), false));
+        
+        // Make sure our $_SESSION looks as we expect it to
         $this->assertEquals(array(
             'key' => array('custom' => 'value'),
             'user' => array(
@@ -269,6 +280,13 @@ class PageTest extends \BootPress\HTMLUnit\Component
                 'name' => 'Joe Bloggs',
             ),
         ), $_SESSION);
+        
+        // Set, get, and keep flash messages
+        $page->session->setFlash('barry', 'allen');
+        $this->assertEquals('null', $page->session->getFlash('barry'));
+        
+        print_r($_SESSION);
+        
     }
 
     public function testEjectMethod()
