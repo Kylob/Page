@@ -1,9 +1,9 @@
 extraneous
 
-[one]
+[first]
 page
 
-[two]
+[skip]
 page
 
 [page]
