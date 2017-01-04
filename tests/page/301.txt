@@ -1,9 +1,9 @@
 extraneous
 
-[duplicate]
+[one]
 page
 
-[new]
+[two]
 page
 
 [page]
