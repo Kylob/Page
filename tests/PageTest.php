@@ -42,7 +42,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
 
     public function testRedirectFromFile()
     {
-        // redirects to https://www.website.com/new.html?foo=bar from 301.txt file
+        // redirects to https://www.website.com/first.html?foo=bar from 301.txt file
         ob_start();
         $page = Page::html(array(
             'dir' => __DIR__.'/page',
@@ -55,12 +55,12 @@ class PageTest extends \BootPress\HTMLUnit\Component
             array('foo' => 'bar')
         ), 'override');
         $output = ob_get_clean();
-        $this->assertGreaterThan(0, strpos($output, '<a href="https://www.website.com/new.html?foo=bar">'));
+        $this->assertGreaterThan(0, strpos($output, '<a href="https://www.website.com/first.html?foo=bar">'));
     }
 
     public function testDoubleRedirectFromFile()
     {
-        // redirects to http://website.com/new.html from 301.txt file
+        // redirects to http://website.com/first.html from 301.txt file
         ob_start();
         $page = Page::html(array(
             'dir' => __DIR__.'/page',
@@ -71,7 +71,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
             'https://www.website.com/redirect/'
         ), 'override');
         $output = ob_get_clean();
-        $this->assertGreaterThan(0, strpos($output, '<a href="http://website.com/new.html">'));
+        $this->assertGreaterThan(0, strpos($output, '<a href="http://website.com/first.html">'));
     }
 
     public function testRegexRedirectWithParamsFromFile()
