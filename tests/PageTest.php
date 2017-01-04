@@ -263,6 +263,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertNull(\BootPress\Page\Session::$started);
         $page->session->set(array('key', 'custom'), 'value');
         $this->assertTrue(\BootPress\Page\Session::$started);
+        $this->assertNotEmpty($page->session->id());
 
         // Set, add, and get session keys with array and dot notations
         $page->session->set('user.id', 100);
