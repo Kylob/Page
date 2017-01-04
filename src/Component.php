@@ -1470,15 +1470,15 @@ EOT;
      *
      * ```txt
      * [new]
-     * old
+     * former/[**:folder]?
      * path
-     * regex/[**:folder]?
      *
      * [next]
      * path
+     * old
      * ```
      *
-     * In this example *'old'* will be redirected to *'new'*, and *'path'* will redirect to *'next'* (it was overridden).  *'regex'* will redirect to *'new'*, and *'regex/dir/path'* will be redirected to *'new?folder=dir/path'*.
+     * In this example, *'old'* will be redirected to *'next'*, and *'path'* will redirect to *'new'*, where it was first defined.  *'former'* will redirect to *'new'*, and *'former/dir/path'* will be redirected to *'new?folder=dir/path'*.
      *
      * @return false|string A path to ``$page->eject()`` your user to.
      */
@@ -1491,7 +1491,7 @@ EOT;
             foreach (array_filter(array_map('trim', file($file))) as $url) {
                 if ($url[0] == '[' && substr($url, -1) == ']') {
                     $new = substr($url, 1, -1);
-                } elseif (isset($new)) {
+                } elseif (isset($new) && !isset($map[$url])) {
                     $map[$url] = $new;
                 }
             }
