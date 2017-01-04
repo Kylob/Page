@@ -2,15 +2,13 @@
 
 namespace BootPress\Page;
 
-use BootPress\Page\Component as Page;
-
 class Session
 {
     /** @var bool A static confirmation that the session has been started, and the flash vars managed. */
     public static $started;
 
     /**
-     * Set the **$value** of a $_SESSION[$key].  Every arg (or array value) will work it's way up the stack, so that you can establish any key within the array.
+     * Set the **$value** of a $_SESSION[$key].
      *
      * @param string|array $key   $_SESSION key(s) in``array()`` or dot '**.**' notation.
      * @param mixed        $value Any value except ``null``.
@@ -18,8 +16,8 @@ class Session
      * @example
      *
      * ```php
-     * $page->session->set(array('key', 'custom), 'value');
-     * $page->session->set('user.id', 100);
+     * $session->set(array('key', 'custom), 'value');
+     * $session->set('user.id', 100);
      * ```
      */
     public function set($key, $value)
@@ -42,7 +40,7 @@ class Session
      * @example
      *
      * ```php
-     * $page->session->add('user', array('name' => 'Joe Bloggs'));
+     * $session->add('user', array('name' => 'Joe Bloggs'));
      * ```
      */
     public function add($key, array $values)
@@ -52,7 +50,7 @@ class Session
     }
 
     /**
-     * Retrieve the value of a $_SESSION[$key].  Every arg (or array value) will work it's way up the stack, so that you can access any key within the array.
+     * Retrieve the value of a $_SESSION[$key].
      * 
      * @param string|array $key $_SESSION key(s) in ``array()`` or dot '**.**' notation.
      * 
@@ -61,8 +59,8 @@ class Session
      * @example
      *
      * ```php
-     * echo $page->session->get(array('key', 'custom)); // value
-     * print_r($page->session->get('user')); // array('id' => 100, 'name' => 'Joe Bloggs')
+     * echo $session->get(array('key', 'custom)); // value
+     * print_r($session->get('user')); // array('id' => 100, 'name' => 'Joe Bloggs')
      * ```
      */
     public function get($key, $default = null)
@@ -79,6 +77,29 @@ class Session
         }
 
         return isset($session) ? $session : $default;
+    }
+
+    /**
+     * Unset the $_SESSION **$key**(s).  Every param you pass will be removed.
+     * 
+     * @param string|array $key $_SESSION key(s) in ``array()`` or dot '**.**' notation.
+     */
+    public function remove($key)
+    {
+        if ($this->resumable() && $this->started()) {
+            $unset = &$_SESSION;
+            foreach (func_get_args() as $key) {
+                $names = $this->explode($key);
+                while (count($names) > 1) {
+                    $name = array_shift($names);
+                    if (isset($_SESSION[$name]) && is_array($_SESSION[$name])) {
+                        $_SESSION = &$_SESSION[$name];
+                    }
+                }
+                unset($_SESSION[array_shift($names)]);
+                $_SESSION = &$unset; // clean up after each pass
+            }
+        }
     }
 
     public function setFlash($key, $value)
@@ -115,7 +136,7 @@ class Session
      */
     private function resumable()
     {
-        return (isset($_SESSION) || self::$started || Page::html()->request->cookies->get(session_name())) ? true : false;
+        return (isset($_SESSION) || isset($_COOKIE[session_name()])) ? true : false;
     }
 
     /**
@@ -128,8 +149,7 @@ class Session
         if (is_null(self::$started)) {
             self::$started = (session_status() === PHP_SESSION_ACTIVE) ? true : session_start();
             if (self::$started) {
-                $page = Page::html();
-                if ($page->url['format'] == 'html' && !$page->request->isXmlHttpRequest()) {
+                if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) != 'xmlhttprequest') {
                     if (isset($_SESSION[__CLASS__]['flash']['next'])) {
                         $_SESSION[__CLASS__]['flash']['now'] = $_SESSION[__CLASS__]['flash']['next'];
                         unset($_SESSION[__CLASS__]['flash']['next']);
