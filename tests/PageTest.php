@@ -271,7 +271,12 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertEquals(array('id' => 100, 'name' => 'Joe Bloggs'), $page->session->get('user'));
         $this->assertNull($page->session->get(array('user', 'name', 'last')));
         $this->assertFalse($page->session->get(array('user', 'name', 'last'), false));
-        unset($_SESSION['key'], $_SESSION['user']);
+
+        // Remove session keys
+        $this->assertNull($page->session->remove('key', 'user.name', 'user.id.missing', 'not.here'));
+        $this->assertEquals(array('user' => array('id' => 100)), $_SESSION);
+        $this->assertNull($page->session->remove('user'));
+        $this->assertEquals(array(), $_SESSION);
 
         // Set and get flash messages
         $page->session->setFlash('barry', 'allen');
