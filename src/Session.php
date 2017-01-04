@@ -8,6 +8,16 @@ class Session
     public static $started;
 
     /**
+     * Ensure a session has been started, and get the id.
+     *
+     * @return string
+     */
+    public function id()
+    {
+        return $this->started() ? session_id() : '';
+    }
+
+    /**
      * Set the **$value** of a $_SESSION[$key].
      *
      * @param string|array $key   $_SESSION key(s) in``array()`` or dot '**.**' notation.
