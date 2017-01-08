@@ -773,7 +773,7 @@ EOT;
                 '<meta name=  "DESCRIPTION" content="  a php manual  ">',
             '</head>',
             '<body style="color:#333;">',
-                '<!--not<head> -->',
+                '<!--not</head> -->',
                 'I\'m in the body!',
             '</body>',
             '</html>',
