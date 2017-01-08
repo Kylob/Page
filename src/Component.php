@@ -1172,7 +1172,7 @@ class Component
         } else {
             $html[] = '<html lang="'.$this->html['language'].'">';
         }
-        if (preg_match(sprintf($pattern, 'head'), $content, $match)) {
+        if (preg_match(sprintf($pattern.'U', 'head'), $content, $match)) {
             $content = mb_substr(mb_strstr($content, $match[0]), mb_strlen($match[0]));
             $html[] = $match[1];
             $head = array(

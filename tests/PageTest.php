@@ -757,7 +757,7 @@ class PageTest extends \BootPress\HTMLUnit\Component
 <meta name  = "KEYwords" content  =  " php documentation ">
 <meta name=  "DESCRIPTION" content="  a php manual  ">
 	</ head>  <body style="color:#333;">
-	
+    <!--not</head> nor </body>-->
 	I'm in the body!</body>
 < /html>
 EOT;
@@ -773,6 +773,7 @@ EOT;
                 '<meta name=  "DESCRIPTION" content="  a php manual  ">',
             '</head>',
             '<body style="color:#333;">',
+                '<!--not</head> nor </body>-->',
                 'I\'m in the body!',
             '</body>',
             '</html>',

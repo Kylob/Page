@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.1] - 2017-01-08
+### Fixed
+- Greedy ``<head>`` regex pattern
+
 ## [1.1] - 2017-01-03
 ### Added
 - 301.txt redirects
