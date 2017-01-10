@@ -12,7 +12,8 @@
     "require": {
         "php": ">=5.4",
         "symfony/http-foundation": "^2.3||^3.0", 
-        "altorouter/altorouter": "^1.0"
+        "altorouter/altorouter": "^1.0",
+        "pimple/pimple": "^3.0"
     },
     "require-dev": {
         "bootpress/htmlunit": "^1.0",
