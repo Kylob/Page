@@ -230,6 +230,10 @@ class PageTest extends \BootPress\HTMLUnit\Component
         $this->assertTrue(empty($page->exists)); // __isset
         $page->exists = true; // __set
         $this->assertTrue($page->exists); // __get
+        #-- Dependency Injection --#
+        $this->assertNull($page::$di);
+        $this->assertInstanceOf('Pimple\Container', $page->di);
+        $this->assertInstanceOf('Pimple\Container', $page::$di);
         #-- Set a session --#
         $this->assertInstanceOf('BootPress\Page\Session', $page->session);
         #-- We are going to play now with a "product" multidimensional array --#
