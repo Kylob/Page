@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.2] - 2017-01-10
 ### Added
-- Optional Pimple ``$page->di`` container
+- Optional [Pimple\Container](http://pimple.sensiolabs.org/)
 
 ## [1.1.1] - 2017-01-08
 ### Fixed
