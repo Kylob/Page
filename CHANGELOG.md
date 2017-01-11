@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [1.2] - 2017-01-10
+### Added
+- Optional [Pimple\Container](http://pimple.sensiolabs.org/)
+
 ## [1.1.1] - 2017-01-08
 ### Fixed
 - Greedy ``<head>`` regex pattern
