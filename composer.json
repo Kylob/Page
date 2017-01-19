@@ -2,6 +2,7 @@
     "name": "bootpress/page",
     "description": "Manipulate every part of an HTML Page at any time.",
     "keywords": ["bootpress", "page", "url", "uri", "html", "framework"],
+    "homepage": "https://www.bootpress.org/components/page.html",
     "license": "MIT",
     "authors": [
         {
