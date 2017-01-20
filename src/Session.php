@@ -8,7 +8,7 @@ class Session
     public static $started;
 
     /**
-     * Ensure a session has been started, and get the id.
+     * Ensure a session has been started, and get the ``session_id()``.
      *
      * @return string
      */
@@ -18,7 +18,7 @@ class Session
     }
 
     /**
-     * Set the **$value** of a $_SESSION[$key].
+     * Set the **$value** of a $_SESSION[**$key**].
      *
      * @param string|array $key   $_SESSION key(s) in``array()`` or dot '**.**' notation.
      * @param mixed        $value Any value except ``null``.
@@ -26,8 +26,8 @@ class Session
      * @example
      *
      * ```php
-     * $session->set(array('key', 'custom), 'value');
-     * $session->set('user.id', 100);
+     * $page->session->set(array('key', 'custom), 'value');
+     * $page->session->set('user.id', 100);
      * ```
      */
     public function set($key, $value)
@@ -42,7 +42,7 @@ class Session
     }
 
     /**
-     * Merge **$values** into a $_SESSION[$key].  If it wasn't an array before, it will be now.
+     * Merge **$values** into a $_SESSION[**$key**].  If it wasn't an array before, it will be now.
      *
      * @param string|array $key    $_SESSION key(s) in``array()`` or dot '**.**' notation.
      * @param mixed        $values To overwrite or add.
@@ -50,7 +50,7 @@ class Session
      * @example
      *
      * ```php
-     * $session->add('user', array('name' => 'Joe Bloggs'));
+     * $page->session->add('user', array('name' => 'Joe Bloggs'));
      * ```
      */
     public function add($key, array $values)
@@ -60,17 +60,18 @@ class Session
     }
 
     /**
-     * Retrieve the value of a $_SESSION[$key].
+     * Retrieve the value of a $_SESSION[**$key**].
      * 
-     * @param string|array $key $_SESSION key(s) in ``array()`` or dot '**.**' notation.
+     * @param string|array $key     $_SESSION key(s) in ``array()`` or dot '**.**' notation.
+     * @param mixed        $default The value you want to return if the value does not exist.
      * 
-     * @return mixed Either ``null`` if the value does not exist, or the value if it does.
+     * @return mixed Either **$default** if the value does not exist, or the value if it does.
      *
      * @example
      *
      * ```php
-     * echo $session->get(array('key', 'custom)); // value
-     * print_r($session->get('user')); // array('id' => 100, 'name' => 'Joe Bloggs')
+     * echo $page->session->get(array('key', 'custom)); // value
+     * print_r($page->session->get('user')); // array('id' => 100, 'name' => 'Joe Bloggs')
      * ```
      */
     public function get($key, $default = null)
@@ -93,6 +94,12 @@ class Session
      * Unset the $_SESSION **$key**(s).  Every param you pass will be removed.
      * 
      * @param string|array $key $_SESSION key(s) in ``array()`` or dot '**.**' notation.
+     *
+     * @example
+     *
+     * ```php
+     * $page->session->remove('user');
+     * ```
      */
     public function remove($key)
     {
@@ -112,6 +119,18 @@ class Session
         }
     }
 
+    /**
+     * Set a flash value that will only be available on the next page request.
+     *
+     * @param string|array $key   $_SESSION flash key(s) in``array()`` or dot '**.**' notation.
+     * @param mixed        $value Any value except ``null``.
+     *
+     * @example
+     *
+     * ```php
+     * $page->session->setFlash('message', 'Hello world!');
+     * ```
+     */
     public function setFlash($key, $value)
     {
         $key = $this->explode($key);
@@ -119,6 +138,20 @@ class Session
         $this->set($key, $value);
     }
 
+    /**
+     * Get a flash value that was set on the previous page request.
+     *
+     * @param string|array $key     $_SESSION flash key(s) in ``array()`` or dot '**.**' notation.
+     * @param mixed        $default The value you want to return if the value does not exist.
+     * 
+     * @return mixed Either **$default** if the value does not exist, or the value if it does.
+     *
+     * @example
+     *
+     * ```php
+     * $page->session->getFlash('message'); // Hello world!
+     * ```
+     */
     public function getFlash($key, $default = null)
     {
         $key = $this->explode($key);
@@ -127,6 +160,9 @@ class Session
         return $this->get($key, $default);
     }
 
+    /**
+     * Keep the flash values in the current request, and add them to the next page request.  This is not necessary for XML Http Requests, as we only forward the flash vars on HTML page requests.
+     */
     public function keepFlash()
     {
         if ($now = $this->get(array(__CLASS__, 'flash', 'now'))) {
