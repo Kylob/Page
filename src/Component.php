@@ -13,11 +13,11 @@ use AltoRouter;
 class Component
 {
     /** 
-     * A Dependency Injection object that you can access at ``$page->di``.  If you access it and this static property is null, we will set up a [Pimple\Container](http://pimple.sensiolabs.org/) object for you.
+     * A Dependency Injection object that you can access at ``$page->global``.  If you access it and this static property is null, we will set up a [Pimple\Container](http://pimple.sensiolabs.org/) object for you.
      *
      * @var object
      */
-    public static $di;
+    public static $global;
 
     /**
      * @var object Either the [Symfony\Component\HttpFoundation\Request](http://symfony.com/doc/current/components/http_foundation.html) object you gave us at ``Page::html()``, or the one we made for you.
@@ -275,12 +275,12 @@ class Component
         // http://stackoverflow.com/questions/4310473/using-set-with-arrays-solved-but-why
         // http://stackoverflow.com/questions/5966918/return-null-by-reference-via-get
         switch ($name) {
-            case 'di':
-                if (is_null(static::$di)) {
-                    static::$di = new Container;
+            case 'global':
+                if (is_null(static::$global)) {
+                    static::$global = new Container;
                 }
 
-                return static::$di;
+                return static::$global;
                 break;
             case 'session':
                 if (is_null(static::$session)) {
