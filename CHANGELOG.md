@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [1.2] - 2017-01-10
+## [1.2] - 2017-01-30
 ### Added
 - Optional [Pimple\Container](http://pimple.sensiolabs.org/)
 
