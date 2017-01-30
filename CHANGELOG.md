@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [1.2] - 2017-01-30
 ### Added
-- Optional [Pimple\Container](http://pimple.sensiolabs.org/)
+- Global dependency injection object
 
 ## [1.1.1] - 2017-01-08
 ### Fixed
