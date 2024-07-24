@@ -317,7 +317,7 @@ class Component
     {
         $url = (!empty($url)) ? $this->formatLocalPath($url) : $this->url['base'];
 
-        return $this->send(RedirectResponse::create(htmlspecialchars_decode($url), $http_response_code));
+        return $this->send(new RedirectResponse(htmlspecialchars_decode($url), $http_response_code));
     }
 
     /**
@@ -1272,7 +1272,7 @@ class Component
      */
     public function sendJson($data = '', $status = 200)
     {
-        return $this->send(JsonResponse::create($data, $status));
+        return $this->send(new JsonResponse($data, $status));
     }
 
     /**
