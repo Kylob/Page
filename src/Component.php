@@ -790,6 +790,7 @@ class Component
         }
         $attributes = (!empty($attributes)) ? ' '.implode(' ', $attributes) : '';
         $html = '<'.$tag.$attributes.'>';
+		if (is_array($content)) $args = $content;
         if (!empty($args)) {
             $html .= implode(' ', array_filter($args));
             $html .= '</'.strstr($tag.' ', ' ', true).'>';
